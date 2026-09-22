@@ -1,0 +1,6 @@
+{
+  "name": "Puzzle Master",
+  "description": "Slide puzzle game featuring multiple difficulty levels, live speed timer, moves counter, and a global high scores leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
