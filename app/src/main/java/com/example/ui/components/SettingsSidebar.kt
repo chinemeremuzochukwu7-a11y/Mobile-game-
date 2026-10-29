@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,28 +22,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Animation
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Paid
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material.icons.filled.VolumeDown
 import androidx.compose.material.icons.filled.VolumeMute
 import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -53,20 +41,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.TileTheme
 import com.example.ui.theme.DeepNavy
 import com.example.ui.theme.GoldTrophy
+import com.example.ui.theme.NeonAmber
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonEmerald
-import com.example.ui.theme.NeonIndigo
-import com.example.ui.theme.NeonPurple
 import com.example.ui.theme.SurfaceBorder
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceCardElevated
@@ -76,30 +61,22 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 
 /**
- * Modern drawer sidebar for Game Settings, Volume Control, Toggles, and Google In-App Purchases.
+ * Settings sidebar for Audio, Volume Control (horizontal line with recommended setting),
+ * Vibration, Animations, and Premium Paid App information.
  */
 @Composable
 fun SettingsSidebar(
     isOpen: Boolean,
-    onClose: () -> Unit,
     isSoundOn: Boolean,
-    onToggleSound: (Boolean) -> Unit,
     volumePercent: Int,
-    onVolumeChanged: (Int) -> Unit,
     isVibrationOn: Boolean,
-    onToggleVibration: (Boolean) -> Unit,
     isAnimationsOn: Boolean,
+    onToggleSound: (Boolean) -> Unit,
+    onVolumeChanged: (Int) -> Unit,
+    onToggleVibration: (Boolean) -> Unit,
     onToggleAnimations: (Boolean) -> Unit,
-    isHapticsOn: Boolean,
-    onToggleHaptics: (Boolean) -> Unit,
-    selectedTheme: TileTheme,
-    onSelectTheme: (TileTheme) -> Unit,
-    isAdsRemoved: Boolean,
-    onPurchaseRemoveAds: () -> Unit,
-    onPurchaseProPack: () -> Unit,
-    onRestorePurchases: () -> Unit,
     onOpenHowToPlay: () -> Unit,
-    billingMessage: String,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (!isOpen) return
@@ -111,23 +88,21 @@ fun SettingsSidebar(
             .clickable { onClose() }
             .testTag("settings_sidebar_backdrop")
     ) {
-        // Drawer Card
         Surface(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(320.dp)
+                .fillMaxWidth(0.85f)
                 .align(Alignment.CenterEnd)
-                .clickable(enabled = false) { /* Stop propagation */ }
-                .testTag("settings_sidebar_panel"),
+                .clickable(enabled = false) { /* Consume clicks */ },
             color = SurfaceDark,
-            shadowElevation = 24.dp
+            shadowElevation = 16.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
                     .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
             ) {
                 // Header
                 Row(
@@ -135,19 +110,12 @@ fun SettingsSidebar(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "Game Settings",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = "Audio, controls & purchases",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary
-                        )
-                    }
+                    Text(
+                        text = "Settings & Audio",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Black,
+                        color = TextPrimary
+                    )
 
                     IconButton(
                         onClick = onClose,
@@ -169,15 +137,15 @@ fun SettingsSidebar(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section 1: Audio & Volume
+                // Section 1: Audio & Volume Control
                 SettingsSectionHeader(title = "AUDIO & VOLUME")
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Sound On/Off Switch
                 SettingsToggleRow(
-                    title = "Game Sound Effects",
-                    subtitle = "Tile sliding clicks and chimes",
+                    title = "Sound Effects",
+                    subtitle = "Tile sliding, victory fanfare, & timer warning",
                     icon = if (isSoundOn) Icons.Default.VolumeUp else Icons.Default.VolumeMute,
                     checked = isSoundOn,
                     onCheckedChange = onToggleSound
@@ -185,77 +153,33 @@ fun SettingsSidebar(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Volume Slider (0 - 100%)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(SurfaceCard)
-                        .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (volumePercent > 50) Icons.Default.VolumeUp else Icons.Default.VolumeDown,
-                                contentDescription = "Volume",
-                                tint = NeonCyan,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Sound Volume",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary
-                            )
-                        }
-                        Text(
-                            text = "$volumePercent%",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = NeonCyan
-                        )
-                    }
-
-                    Slider(
-                        value = volumePercent.toFloat(),
-                        onValueChange = { onVolumeChanged(it.toInt()) },
-                        valueRange = 0f..100f,
-                        enabled = isSoundOn,
-                        colors = SliderDefaults.colors(
-                            thumbColor = NeonCyan,
-                            activeTrackColor = NeonCyan,
-                            inactiveTrackColor = SurfaceBorder
-                        ),
-                        modifier = Modifier.testTag("volume_slider")
-                    )
-                }
+                // Volume Horizontal Line Control with increase/decrease buttons and recommended setting
+                VolumeHorizontalLineControl(
+                    volumePercent = volumePercent,
+                    isSoundOn = isSoundOn,
+                    onVolumeChanged = onVolumeChanged
+                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section 2: Haptics & Animations
+                // Section 2: Haptics & Performance
                 SettingsSectionHeader(title = "HAPTICS & PERFORMANCE")
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 SettingsToggleRow(
                     title = "Vibration & Haptics",
-                    subtitle = "Tactile feedback when tiles snap",
+                    subtitle = "Tactile feedback when blocks move",
                     icon = Icons.Default.Vibration,
                     checked = isVibrationOn,
                     onCheckedChange = onToggleVibration
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 SettingsToggleRow(
                     title = "Smooth Animations",
-                    subtitle = "Fluids neon tile translation physics",
+                    subtitle = "High frame rate sliding visuals",
                     icon = Icons.Default.Animation,
                     checked = isAnimationsOn,
                     onCheckedChange = onToggleAnimations
@@ -263,101 +187,60 @@ fun SettingsSidebar(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Section 3: Recommended Store & In-App Purchases
-                SettingsSectionHeader(title = "RECOMMENDED & STORE")
+                // Section 3: Paid Edition Status
+                SettingsSectionHeader(title = "PLAY STORE EDITION")
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Remove Ads Card
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .border(
-                            1.5.dp,
-                            if (isAdsRemoved) Brush.linearGradient(listOf(NeonEmerald, NeonCyan))
-                            else Brush.linearGradient(listOf(GoldTrophy, NeonIndigo)),
-                            RoundedCornerShape(16.dp)
-                        ),
-                    color = SurfaceCard,
-                    shadowElevation = 4.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Paid,
-                                    contentDescription = "Store",
-                                    tint = GoldTrophy,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (isAdsRemoved) "Ads Removed (VIP)" else "Remove All Ads",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                            }
-                            if (isAdsRemoved) {
-                                Text(
-                                    text = "ACTIVE",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = NeonEmerald,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        Text(
-                            text = if (isAdsRemoved) "You have an ad-free premium experience!"
-                            else "Permanently removes all banners, interstitial popups, and ad delays.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
-                            fontSize = 11.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        if (!isAdsRemoved) {
-                            ElevatedButton(
-                                onClick = onPurchaseRemoveAds,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(38.dp)
-                                    .testTag("purchase_remove_ads_button"),
-                                colors = ButtonDefaults.elevatedButtonColors(
-                                    containerColor = GoldTrophy,
-                                    contentColor = Color.Black
-                                ),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Text(
-                                    text = "Unlock Ad-Free ($1.99)",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Pro Solver Pack
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp)),
+                        .border(1.dp, NeonEmerald.copy(alpha = 0.5f), RoundedCornerShape(14.dp)),
+                    color = SurfaceCard
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = NeonEmerald,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Paid App License",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                        }
+
+                        Text(
+                            text = "100% Ad-Free Premium Version. All 45 levels, hint features, and audio effects unlocked with zero ads or recurring fees.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // How to Play button
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp))
+                        .clickable { onOpenHowToPlay() },
                     color = SurfaceCard
                 ) {
                     Row(
@@ -365,152 +248,22 @@ fun SettingsSidebar(
                             .fillMaxWidth()
                             .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Pro Solver Pass",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = "Unlimited instant puzzle hints",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
-                                fontSize = 11.sp
-                            )
-                        }
-
-                        OutlinedButton(
-                            onClick = onPurchaseProPack,
-                            modifier = Modifier
-                                .height(34.dp)
-                                .testTag("purchase_pro_pack_button"),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "$0.99",
-                                color = NeonCyan,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Restore Purchases
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onRestorePurchases() }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Restore",
-                        tint = TextMuted,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Restore Previous Purchases",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted,
-                        fontSize = 11.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                // Section 4: Visual Themes
-                SettingsSectionHeader(title = "PUZZLE THEMES")
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                TileTheme.entries.forEach { theme ->
-                    val isSelected = theme == selectedTheme
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) NeonIndigo.copy(alpha = 0.2f) else SurfaceCard)
-                            .border(
-                                1.dp,
-                                if (isSelected) NeonCyan else SurfaceBorder,
-                                RoundedCornerShape(10.dp)
-                            )
-                            .clickable { onSelectTheme(theme) }
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = theme.displayName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) NeonCyan else TextPrimary
+                        Icon(
+                            imageVector = Icons.Default.HelpOutline,
+                            contentDescription = null,
+                            tint = NeonCyan,
+                            modifier = Modifier.size(20.dp)
                         )
-
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = "Active",
-                                tint = NeonCyan,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                        Text(
+                            text = "Game Rules & How to Play",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Section 5: Help & About
-                SettingsSectionHeader(title = "SUPPORT & GUIDE")
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceCard)
-                        .clickable { onOpenHowToPlay() }
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.HelpOutline,
-                        contentDescription = "Help",
-                        tint = NeonCyan,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "How to Play & Winning Tactics",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextPrimary
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Status message
-                if (billingMessage.isNotEmpty()) {
-                    Text(
-                        text = billingMessage,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted,
-                        fontSize = 10.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -520,10 +273,10 @@ fun SettingsSidebar(
 private fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.Bold,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.ExtraBold,
+        color = NeonAmber,
         letterSpacing = 1.sp,
-        color = NeonIndigo,
         fontSize = 11.sp
     )
 }
@@ -536,52 +289,57 @@ private fun SettingsToggleRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceCard)
-            .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp)),
+        color = SurfaceCard
     ) {
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (checked) NeonCyan else TextMuted,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (checked) NeonCyan else TextMuted,
+                    modifier = Modifier.size(20.dp)
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    fontSize = 11.sp
-                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        fontSize = 11.sp
+                    )
+                }
             }
-        }
 
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = NeonCyan,
-                checkedTrackColor = NeonIndigo,
-                uncheckedThumbColor = TextMuted,
-                uncheckedTrackColor = SurfaceBorder
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.Black,
+                    checkedTrackColor = NeonCyan,
+                    uncheckedThumbColor = TextMuted,
+                    uncheckedTrackColor = SurfaceCardElevated
+                )
             )
-        )
+        }
     }
 }

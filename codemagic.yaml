@@ -1,0 +1,94 @@
+workflows:
+  android-release:
+    name: Android Release Build (Sonance Key Signing)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        # Codemagic environment variable group holding keystore and credentials
+        - sonance
+      vars:
+        PACKAGE_NAME: "com.aistudio.puzzle.qzkmrv"
+        KEY_ALIAS: "sonance"
+      android_signing:
+        - sonance
+    triggering:
+      events:
+        - push
+        - tag
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+        - pattern: master
+          include: true
+          source: true
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "Setting up Android SDK local.properties..."
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Set up keystore and code signing for sonance
+        script: |
+          echo "Configuring Android code signing with key alias: sonance"
+          # Support 1: Environment variable base64 encoded keystore in 'sonance' group
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo "Decoding CM_KEYSTORE from environment group..."
+            echo "$CM_KEYSTORE" | base64 --decode > /tmp/sonance.keystore
+            echo "KEYSTORE_PATH=/tmp/sonance.keystore" >> $CM_ENV
+            echo "STORE_PASSWORD=${CM_KEYSTORE_PASSWORD:-$STORE_PASSWORD}" >> $CM_ENV
+            echo "KEY_PASSWORD=${CM_KEY_PASSWORD:-$KEY_PASSWORD}" >> $CM_ENV
+            echo "KEY_ALIAS=sonance" >> $CM_ENV
+          # Support 2: Codemagic native Android code signing file
+          elif [ -n "$CM_KEYSTORE_PATH" ] && [ -f "$CM_KEYSTORE_PATH" ]; then
+            echo "Using Codemagic managed keystore at $CM_KEYSTORE_PATH..."
+            echo "KEYSTORE_PATH=$CM_KEYSTORE_PATH" >> $CM_ENV
+            echo "STORE_PASSWORD=$CM_KEYSTORE_PASSWORD" >> $CM_ENV
+            echo "KEY_PASSWORD=$CM_KEY_PASSWORD" >> $CM_ENV
+            echo "KEY_ALIAS=${CM_KEY_ALIAS:-sonance}" >> $CM_ENV
+          else
+            echo "Notice: No external keystore provided. Falling back to build environment keys."
+          fi
+      - name: Run Android Unit Tests
+        script: |
+          echo "Running unit tests for puzzle game..."
+          gradle :app:testDebugUnitTest --no-daemon
+      - name: Build Android App Bundle (AAB) & Universal Release APK
+        script: |
+          echo "Building signed Release AAB and APK for Play Store..."
+          SIGNING_OPTS=""
+          ACTIVE_KEYSTORE="${KEYSTORE_PATH:-$CM_KEYSTORE_PATH}"
+          if [ -n "$ACTIVE_KEYSTORE" ] && [ -f "$ACTIVE_KEYSTORE" ]; then
+            echo "Injecting sonance signing keys into Gradle build..."
+            SIGNING_OPTS="-Pandroid.injected.signing.store.file=$ACTIVE_KEYSTORE -Pandroid.injected.signing.store.password=${STORE_PASSWORD:-$CM_KEYSTORE_PASSWORD} -Pandroid.injected.signing.key.alias=${KEY_ALIAS:-sonance} -Pandroid.injected.signing.key.password=${KEY_PASSWORD:-$CM_KEY_PASSWORD}"
+          fi
+          gradle :app:bundleRelease :app:assembleRelease $SIGNING_OPTS --no-daemon
+    artifacts:
+      - app/build/outputs/**/*.aab
+      - app/build/outputs/**/*.apk
+      - app/build/reports/tests/**
+    publishing:
+      email:
+        recipients:
+          - gilbertuzochukwu846@gmail.com
+        notify:
+          failure: true
+          success: true
+      # To publish directly to Google Play, add your service account credentials to Codemagic and uncomment:
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal # or alpha, beta, production
+
+  android-debug:
+    name: Android Fast Debug Build
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    scripts:
+      - name: Set up local.properties
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Build Debug APK
+        script: |
+          gradle :app:assembleDebug --no-daemon
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk

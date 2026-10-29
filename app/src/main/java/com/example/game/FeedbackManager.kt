@@ -1,126 +1,58 @@
 package com.example.game
 
 import android.content.Context
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 
+/**
+ * FeedbackManager delegates to SoundEffectManager and handles tactile and sound synthesis.
+ */
 class FeedbackManager(context: Context) {
-    private val appContext = context.applicationContext
-    private var toneGenerator: ToneGenerator? = null
-    var isSoundEnabled: Boolean = true
+    val soundEffectManager: SoundEffectManager = SoundEffectManager(context)
+
+    var isSoundEnabled: Boolean
+        get() = soundEffectManager.isSoundEnabled
         set(value) {
-            field = value
-            updateToneGenerator()
+            soundEffectManager.isSoundEnabled = value
         }
-    var isHapticsEnabled: Boolean = true
-    var isAnimationsEnabled: Boolean = true
-    var volumePercent: Int = 80
+
+    var isHapticsEnabled: Boolean
+        get() = soundEffectManager.isHapticsEnabled
         set(value) {
-            field = value.coerceIn(0, 100)
-            updateToneGenerator()
+            soundEffectManager.isHapticsEnabled = value
         }
 
-    init {
-        updateToneGenerator()
-    }
-
-    private fun updateToneGenerator() {
-        try {
-            toneGenerator?.release()
-            toneGenerator = if (isSoundEnabled && volumePercent > 0) {
-                ToneGenerator(AudioManager.STREAM_MUSIC, volumePercent)
-            } else {
-                null
-            }
-        } catch (_: Throwable) {
-            toneGenerator = null
+    var isAnimationsEnabled: Boolean
+        get() = soundEffectManager.isAnimationsEnabled
+        set(value) {
+            soundEffectManager.isAnimationsEnabled = value
         }
-    }
 
-    private val vibrator: Vibrator? by lazy {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager = appContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                vibratorManager?.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                appContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            }
-        } catch (_: Exception) {
-            null
+    var volumePercent: Int
+        get() = soundEffectManager.volumePercent
+        set(value) {
+            soundEffectManager.volumePercent = value
         }
-    }
 
     fun playMoveFeedback() {
-        if (isHapticsEnabled) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator?.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator?.vibrate(20)
-                }
-            } catch (_: Exception) { }
-        }
-
-        if (isSoundEnabled) {
-            try {
-                toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 30)
-            } catch (_: Exception) { }
-        }
+        soundEffectManager.playBlockMove()
     }
 
     fun playVictoryFeedback() {
-        if (isHapticsEnabled) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val timings = longArrayOf(0, 80, 50, 120, 50, 200)
-                    val amplitudes = intArrayOf(0, 200, 0, 230, 0, 255)
-                    vibrator?.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator?.vibrate(300)
-                }
-            } catch (_: Exception) { }
-        }
+        soundEffectManager.playWinCondition()
+    }
 
-        if (isSoundEnabled) {
-            try {
-                toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 250)
-            } catch (_: Exception) { }
-        }
+    fun playTimerWarning() {
+        soundEffectManager.playTimerWarning()
     }
 
     fun playClick() {
-        if (isHapticsEnabled) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator?.vibrate(VibrationEffect.createOneShot(10, 80))
-                }
-            } catch (_: Exception) { }
-        }
-
-        if (isSoundEnabled && volumePercent > 0) {
-            try {
-                toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP2, 20)
-            } catch (_: Exception) { }
-        }
+        soundEffectManager.playClick()
     }
 
     fun playStartupChime() {
-        if (isSoundEnabled && volumePercent > 0) {
-            try {
-                toneGenerator?.startTone(ToneGenerator.TONE_PROP_PROMPT, 200)
-            } catch (_: Exception) { }
-        }
+        soundEffectManager.playStartupChime()
     }
 
     fun release() {
-        toneGenerator?.release()
-        toneGenerator = null
+        soundEffectManager.release()
     }
 }

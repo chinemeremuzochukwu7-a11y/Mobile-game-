@@ -145,7 +145,7 @@ fun HowToPlayDialog(
                     }
                 }
 
-                // 3 Core Directions / Steps
+                // Core Directions & Instructions for Level 1 and Level 2
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -153,24 +153,24 @@ fun HowToPlayDialog(
                     DirectionStepCard(
                         stepNumber = 1,
                         icon = Icons.Default.TouchApp,
-                        title = "Tap Adjacent Tiles to Slide",
-                        description = "Tap any numbered tile next to the empty slot to slide it in. You can also tap a line to slide multiple tiles at once!",
+                        title = "Level 1: The Basics (Sliding & Arranging)",
+                        description = "Tap any numbered tile next to the empty slot to slide it in. The glowing hint guides your initial move. Arrange tiles 1 through 8 in sequential order!",
                         accentColor = NeonCyan
                     )
 
                     DirectionStepCard(
                         stepNumber = 2,
                         icon = Icons.Default.FormatListNumbered,
-                        title = "Arrange in Numerical Order",
-                        description = "Arrange tiles 1 to 8 (Easy), 1 to 15 (Medium), or 1 to 24 (Hard) from left to right, top to bottom. Green dots indicate correct spots.",
+                        title = "Level 2: Strategy (Row-by-Row Solving)",
+                        description = "Strategy tip: Solve and lock Row 1 first (1, 2, 3)! Watch the glowing green indicator dots that show when a tile is at its home spot.",
                         accentColor = NeonEmerald
                     )
 
                     DirectionStepCard(
                         stepNumber = 3,
                         icon = Icons.Default.Speed,
-                        title = "Speed Timer & Multi-Levels",
-                        description = "Beat par times, earn 3 stars across progressive levels, and submit high scores to the global leaderboard!",
+                        title = "Audio Feedback & Timer Warnings",
+                        description = "Experience tactile audio on moves, victory chimes, and urgent timer warning beeps as you approach par time. Configure volume with the horizontal line slider!",
                         accentColor = NeonAmber
                     )
                 }

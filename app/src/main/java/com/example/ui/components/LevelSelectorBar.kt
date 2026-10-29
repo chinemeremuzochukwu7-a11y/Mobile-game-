@@ -105,7 +105,7 @@ fun LevelSelectorBar(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "LEVEL $currentLevelNumber / 10",
+                        text = "LEVEL $currentLevelNumber / ${levels.size}",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = themeColor,
@@ -202,7 +202,7 @@ private fun LevelChip(
         } else if (level.isTutorial) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "1",
+                    text = "${level.levelNumber}",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 14.sp,
                     color = textColor

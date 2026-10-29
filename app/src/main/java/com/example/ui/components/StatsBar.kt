@@ -44,6 +44,7 @@ import com.example.ui.GameState
 import com.example.ui.theme.GoldTrophy
 import com.example.ui.theme.NeonAmber
 import com.example.ui.theme.NeonCyan
+import com.example.ui.theme.NeonRose
 import com.example.ui.theme.SurfaceBorder
 import com.example.ui.theme.SurfaceCard
 import com.example.ui.theme.SurfaceCardElevated
@@ -58,6 +59,7 @@ fun StatsBar(
     gameState: GameState,
     bestRecord: LeaderboardEntity?,
     onTogglePause: () -> Unit,
+    isTimerWarningActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val totalSeconds = timeElapsedMillis / 1000
@@ -66,12 +68,18 @@ fun StatsBar(
     val tenths = (timeElapsedMillis % 1000) / 100
     val formattedTime = String.format("%02d:%02d.%d", minutes, seconds, tenths)
 
+    val timerColor = if (isTimerWarningActive) NeonRose else NeonCyan
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(SurfaceCard)
-            .border(1.dp, SurfaceBorder, RoundedCornerShape(20.dp))
+            .border(
+                1.dp,
+                if (isTimerWarningActive) NeonRose.copy(alpha = 0.8f) else SurfaceBorder,
+                RoundedCornerShape(20.dp)
+            )
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -86,13 +94,13 @@ fun StatsBar(
                     Icon(
                         imageVector = Icons.Default.Timer,
                         contentDescription = "Timer",
-                        tint = NeonCyan,
+                        tint = timerColor,
                         modifier = Modifier.size(20.dp)
                     )
                 },
-                label = "TIME",
+                label = if (isTimerWarningActive) "TIME (HURRY!)" else "TIME",
                 value = formattedTime,
-                valueColor = NeonCyan,
+                valueColor = timerColor,
                 modifier = Modifier.weight(1f),
                 testTag = "timer_display"
             )

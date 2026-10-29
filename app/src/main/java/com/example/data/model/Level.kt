@@ -12,30 +12,32 @@ data class Level(
 )
 
 object LevelCatalog {
-    // 10 levels per difficulty = 30 handcrafted progressive levels
+    // 15 progressive handcrafted levels per difficulty = 45 total levels
     val easyLevels: List<Level> = listOf(
         Level(
             levelNumber = 1,
             title = "First Steps",
-            subtitle = "Tutorial: Slide the glowing tile into the empty slot!",
+            subtitle = "Tutorial 1: Slide the glowing tile into the empty slot!",
             shuffleSteps = 2,
             parMoves = 4,
             parSeconds = 15,
             isTutorial = true,
-            tutorialInstruction = "Tap the glowing tile adjacent to the empty slot to slide it in place!"
+            tutorialInstruction = "Tap the glowing tile adjacent to the empty spot to slide it into position. Arrange tiles 1 to 8!"
         ),
         Level(
             levelNumber = 2,
             title = "Gentle Glide",
-            subtitle = "Just a few moves to solve",
+            subtitle = "Tutorial 2: Strategy - Solve Row 1 first!",
             shuffleSteps = 6,
             parMoves = 8,
-            parSeconds = 20
+            parSeconds = 20,
+            isTutorial = true,
+            tutorialInstruction = "Strategy: Lock row 1 (tiles 1, 2, 3) in place first! Green indicator dots show when a tile is at its home spot."
         ),
         Level(
             levelNumber = 3,
             title = "Corner Tuck",
-            subtitle = "Place tiles 1 and 2 first",
+            subtitle = "Place tiles 1 and 2, then tuck in 3",
             shuffleSteps = 12,
             parMoves = 14,
             parSeconds = 25
@@ -60,7 +62,7 @@ object LevelCatalog {
             levelNumber = 6,
             title = "Pivot Shuffle",
             subtitle = "Rotate tiles around the center",
-            shuffleSteps = 32,
+            shuffleSteps = 30,
             parMoves = 32,
             parSeconds = 40
         ),
@@ -68,7 +70,7 @@ object LevelCatalog {
             levelNumber = 7,
             title = "Sprint Stage",
             subtitle = "Race against the clock",
-            shuffleSteps = 40,
+            shuffleSteps = 38,
             parMoves = 38,
             parSeconds = 45
         ),
@@ -76,7 +78,7 @@ object LevelCatalog {
             levelNumber = 8,
             title = "Precision Turn",
             subtitle = "Careful move management",
-            shuffleSteps = 50,
+            shuffleSteps = 46,
             parMoves = 44,
             parSeconds = 50
         ),
@@ -84,29 +86,70 @@ object LevelCatalog {
             levelNumber = 9,
             title = "Quick Silver",
             subtitle = "Sub-30 second challenge",
-            shuffleSteps = 60,
+            shuffleSteps = 54,
             parMoves = 50,
             parSeconds = 55
         ),
         Level(
             levelNumber = 10,
             title = "Easy Apex",
-            subtitle = "Grand finale of the 3x3 track",
-            shuffleSteps = 70,
+            subtitle = "Grand 3x3 mid-point milestone",
+            shuffleSteps = 62,
             parMoves = 55,
             parSeconds = 60
+        ),
+        Level(
+            levelNumber = 11,
+            title = "Serpentine Path",
+            subtitle = "Snake the tiles through the grid",
+            shuffleSteps = 68,
+            parMoves = 60,
+            parSeconds = 65
+        ),
+        Level(
+            levelNumber = 12,
+            title = "Zig-Zag Drift",
+            subtitle = "Alternate diagonal moves",
+            shuffleSteps = 74,
+            parMoves = 65,
+            parSeconds = 70
+        ),
+        Level(
+            levelNumber = 13,
+            title = "Cascade Fall",
+            subtitle = "Chain reaction tile maneuvers",
+            shuffleSteps = 80,
+            parMoves = 70,
+            parSeconds = 75
+        ),
+        Level(
+            levelNumber = 14,
+            title = "Diamond Swirl",
+            subtitle = "Circular perimeter rotation",
+            shuffleSteps = 86,
+            parMoves = 75,
+            parSeconds = 80
+        ),
+        Level(
+            levelNumber = 15,
+            title = "Grand Master 3x3",
+            subtitle = "Ultimate master test of 8-puzzle",
+            shuffleSteps = 95,
+            parMoves = 80,
+            parSeconds = 90
         )
     )
 
-    val mediumLevels: List<Level> = (1..10).map { lvl ->
+    val mediumLevels: List<Level> = (1..15).map { lvl ->
         val names = listOf(
             "Classic 15", "Quarter Turn", "Center Ring", "Four Corners",
             "Linear Flow", "Gridlock Breaker", "Rapid Transit", "Orbit Shift",
-            "Matrix Maze", "Grand Master 15"
+            "Matrix Maze", "Grand Master 15", "Neon Vortex", "Cyber Circuit",
+            "Quantum Grid", "Stellar Shift", "Apex 4x4"
         )
-        val shuffles = 20 + lvl * 14
-        val parM = 35 + lvl * 9
-        val parS = 60 + lvl * 15
+        val shuffles = 18 + lvl * 10
+        val parM = 30 + lvl * 7
+        val parS = 50 + lvl * 12
         Level(
             levelNumber = lvl,
             title = names[lvl - 1],
@@ -117,15 +160,16 @@ object LevelCatalog {
         )
     }
 
-    val hardLevels: List<Level> = (1..10).map { lvl ->
+    val hardLevels: List<Level> = (1..15).map { lvl ->
         val names = listOf(
             "24 Titan", "Deep Trench", "Grand Perimeter", "Labyrinth Walk",
             "Cascade Shift", "Hyper Spiral", "Quantum Flux", "Apex Predator",
-            "Colosseum", "Immortal 24"
+            "Colosseum", "Immortal 24", "Obsidian Maze", "Celestial Sphere",
+            "Infinity Loop", "Supernova", "Zenith 5x5"
         )
-        val shuffles = 40 + lvl * 22
-        val parM = 70 + lvl * 16
-        val parS = 120 + lvl * 20
+        val shuffles = 35 + lvl * 16
+        val parM = 60 + lvl * 12
+        val parS = 100 + lvl * 16
         Level(
             levelNumber = lvl,
             title = names[lvl - 1],

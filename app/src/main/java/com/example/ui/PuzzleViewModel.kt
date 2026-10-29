@@ -4,8 +4,6 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ads.AdMobHelper
-import com.example.billing.GoogleBillingHelper
 import com.example.data.db.AppDatabase
 import com.example.data.db.LeaderboardEntity
 import com.example.data.model.Difficulty
@@ -39,21 +37,26 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
     private val prefs = application.getSharedPreferences("puzzle_master_prefs", Context.MODE_PRIVATE)
     private val repository: LeaderboardRepository
     val feedbackManager: FeedbackManager = FeedbackManager(application)
-    val adMobHelper: AdMobHelper = AdMobHelper(application)
-    val billingHelper: GoogleBillingHelper = GoogleBillingHelper(application)
 
     init {
         val database = AppDatabase.getDatabase(application, viewModelScope)
         repository = LeaderboardRepository(database.leaderboardDao())
-        adMobHelper.initialize()
-        billingHelper.initialize()
     }
 
-    // App Initial Splash Loading (1 to 100%)
-    private val _isSplashFinished = MutableStateFlow(false)
+    // Direct landing on main game interface
+    private val _isSplashFinished = MutableStateFlow(true)
     val isSplashFinished: StateFlow<Boolean> = _isSplashFinished.asStateFlow()
 
-    // Settings Sidebar state
+    // Dedicated Sections modals: Levels & Stages, Instructions, Settings, Top Menu
+    private val _isLevelsSectionOpen = MutableStateFlow(false)
+    val isLevelsSectionOpen: StateFlow<Boolean> = _isLevelsSectionOpen.asStateFlow()
+
+    private val _isInstructionsSectionOpen = MutableStateFlow(false)
+    val isInstructionsSectionOpen: StateFlow<Boolean> = _isInstructionsSectionOpen.asStateFlow()
+
+    private val _isMenuOpen = MutableStateFlow(false)
+    val isMenuOpen: StateFlow<Boolean> = _isMenuOpen.asStateFlow()
+
     private val _isSettingsOpen = MutableStateFlow(false)
     val isSettingsOpen: StateFlow<Boolean> = _isSettingsOpen.asStateFlow()
 
@@ -81,15 +84,8 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
     )
     val maxUnlockedLevel: StateFlow<Int> = _maxUnlockedLevel.asStateFlow()
 
-    // First time onboarding dialog: True on fresh install
-    private val _isHowToPlayOpen = MutableStateFlow(
-        prefs.getBoolean("is_first_install", true)
-    )
-    val isHowToPlayOpen: StateFlow<Boolean> = _isHowToPlayOpen.asStateFlow()
-
-    // Level 1 tutorial recognition tracking
-    private val _isTutorialRecognized = MutableStateFlow(false)
-    val isTutorialRecognized: StateFlow<Boolean> = _isTutorialRecognized.asStateFlow()
+    private val _isTimerWarningActive = MutableStateFlow(false)
+    val isTimerWarningActive: StateFlow<Boolean> = _isTimerWarningActive.asStateFlow()
 
     private val _board = MutableStateFlow<List<Int>>(emptyList())
     val board: StateFlow<List<Int>> = _board.asStateFlow()
@@ -103,13 +99,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
     private val _gameState = MutableStateFlow(GameState.IDLE)
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
-    private val _tileTheme = MutableStateFlow(
-        try {
-            TileTheme.valueOf(prefs.getString("selected_tile_theme", Difficulty.EASY.defaultTheme().name) ?: Difficulty.EASY.defaultTheme().name)
-        } catch (_: Exception) {
-            Difficulty.EASY.defaultTheme()
-        }
-    )
+    private val _tileTheme = MutableStateFlow(TileTheme.CLASSIC_WOOD)
     val tileTheme: StateFlow<TileTheme> = _tileTheme.asStateFlow()
 
     private val _hintIndex = MutableStateFlow<Int?>(null)
@@ -121,7 +111,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
     private val _isLeaderboardOpen = MutableStateFlow(false)
     val isLeaderboardOpen: StateFlow<Boolean> = _isLeaderboardOpen.asStateFlow()
 
-    private val _leaderboardFilter = MutableStateFlow(Difficulty.MEDIUM)
+    private val _leaderboardFilter = MutableStateFlow(Difficulty.EASY)
     val leaderboardFilter: StateFlow<Difficulty> = _leaderboardFilter.asStateFlow()
 
     private val _isShowingOnlyUserScores = MutableStateFlow(false)
@@ -141,13 +131,6 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _isScoreSubmitted = MutableStateFlow(false)
     val isScoreSubmitted: StateFlow<Boolean> = _isScoreSubmitted.asStateFlow()
-
-    // Loading state for interstitial/rewarded ad fetching transitions
-    private val _isAdLoading = MutableStateFlow(false)
-    val isAdLoading: StateFlow<Boolean> = _isAdLoading.asStateFlow()
-
-    private val _adLoadingMessage = MutableStateFlow("Loading next challenge...")
-    val adLoadingMessage: StateFlow<String> = _adLoadingMessage.asStateFlow()
 
     private val undoStack = mutableListOf<List<Int>>()
     private val _canUndo = MutableStateFlow(false)
@@ -185,11 +168,6 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
             val savedMax = prefs.getInt("max_unlocked_level_${newDifficulty.name}", 1)
             _maxUnlockedLevel.value = savedMax
             _currentLevelNumber.value = 1
-            _isTutorialRecognized.value = false
-            // Switch visual theme to the difficulty's tailored theme
-            val themeForDifficulty = newDifficulty.defaultTheme()
-            _tileTheme.value = themeForDifficulty
-            prefs.edit().putString("selected_tile_theme", themeForDifficulty.name).apply()
             startLevel(1)
         }
     }
@@ -210,6 +188,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         _hintIndex.value = null
         _isVictoryDialogOpen.value = false
         _isScoreSubmitted.value = false
+        _isTimerWarningActive.value = false
         undoStack.clear()
         _canUndo.value = false
 
@@ -217,16 +196,16 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         val newBoard = PuzzleEngine.generateBoardForLevel(_difficulty.value, level.shuffleSteps)
         _board.value = newBoard
 
-        // For Level 1, automatically highlight initial hint to guide the player
+        // For Level 1, automatically compute initial hint move to guide player immediately
         if (_difficulty.value == Difficulty.EASY && levelNumber == 1) {
-            _isTutorialRecognized.value = false
             val firstHint = PuzzleEngine.findHintMove(newBoard, _difficulty.value.gridSize)
             _hintIndex.value = firstHint
         }
     }
 
-    fun startNewGame() {
+    fun restartCurrentLevel() {
         startLevel(_currentLevelNumber.value)
+        feedbackManager.playClick()
     }
 
     fun onTileClick(index: Int) {
@@ -244,11 +223,6 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         _hintIndex.value = null
         feedbackManager.playMoveFeedback()
 
-        // Check if user is on Level 1 tutorial and moved the tile successfully
-        if (_difficulty.value == Difficulty.EASY && _currentLevelNumber.value == 1 && !_isTutorialRecognized.value) {
-            _isTutorialRecognized.value = true
-        }
-
         if (_gameState.value == GameState.IDLE) {
             _gameState.value = GameState.PLAYING
             startTimer()
@@ -260,29 +234,36 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun completeTutorialAndPlay() {
-        _isTutorialRecognized.value = true
-        feedbackManager.playClick()
-    }
-
-    fun closeHowToPlayDialog() {
-        _isHowToPlayOpen.value = false
-        prefs.edit().putBoolean("is_first_install", false).apply()
-        feedbackManager.playClick()
-    }
-
-    fun openHowToPlayDialog() {
-        _isHowToPlayOpen.value = true
-        feedbackManager.playClick()
-    }
-
     private fun startTimer() {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             val startTime = System.currentTimeMillis() - _timeElapsedMillis.value
+            val level = LevelCatalog.getLevel(_difficulty.value, _currentLevelNumber.value)
+            val parMillis = level.parSeconds * 1000L
+            val warningStartMillis = maxOf(5000L, parMillis - 10_000L)
+            var lastWarningSecond = -1
+
             while (isActive && _gameState.value == GameState.PLAYING) {
                 delay(100)
-                _timeElapsedMillis.value = System.currentTimeMillis() - startTime
+                val elapsed = System.currentTimeMillis() - startTime
+                _timeElapsedMillis.value = elapsed
+
+                val currentSecond = (elapsed / 1000).toInt()
+                if (elapsed in warningStartMillis until parMillis) {
+                    _isTimerWarningActive.value = true
+                    if (currentSecond != lastWarningSecond) {
+                        lastWarningSecond = currentSecond
+                        feedbackManager.playTimerWarning()
+                    }
+                } else if (elapsed >= parMillis) {
+                    _isTimerWarningActive.value = true
+                    if (currentSecond % 5 == 0 && currentSecond != lastWarningSecond) {
+                        lastWarningSecond = currentSecond
+                        feedbackManager.playTimerWarning()
+                    }
+                } else {
+                    _isTimerWarningActive.value = false
+                }
             }
         }
     }
@@ -330,12 +311,6 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         _isPeeking.value = peek
     }
 
-    fun setTileTheme(theme: TileTheme) {
-        _tileTheme.value = theme
-        prefs.edit().putString("selected_tile_theme", theme.name).apply()
-        feedbackManager.playClick()
-    }
-
     private fun handleVictory() {
         _gameState.value = GameState.SOLVED
         timerJob?.cancel()
@@ -345,9 +320,9 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         val score = _difficulty.value.calculateScore(_moves.value, seconds)
         val stars = _difficulty.value.calculateStars(_moves.value, seconds)
 
-        // Unlock next level if currently completed level was the furthest
         val currentLvl = _currentLevelNumber.value
-        if (currentLvl >= _maxUnlockedLevel.value && currentLvl < 10) {
+        val totalLevels = LevelCatalog.getLevelsForDifficulty(_difficulty.value).size
+        if (currentLvl >= _maxUnlockedLevel.value && currentLvl < totalLevels) {
             val nextLvl = currentLvl + 1
             _maxUnlockedLevel.value = nextLvl
             prefs.edit().putInt("max_unlocked_level_${_difficulty.value.name}", nextLvl).apply()
@@ -361,29 +336,16 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
 
     fun playNextLevel() {
         val nextLevel = _currentLevelNumber.value + 1
+        val totalLevels = LevelCatalog.getLevelsForDifficulty(_difficulty.value).size
         _isVictoryDialogOpen.value = false
-        _isAdLoading.value = false
 
-        if (nextLevel <= 10) {
+        if (nextLevel <= totalLevels) {
             _currentLevelNumber.value = nextLevel
             startLevel(nextLevel)
         } else {
             startLevel(_currentLevelNumber.value)
         }
-    }
-
-    fun setAdLoading(loading: Boolean, message: String = "Loading sponsor ad...") {
-        _adLoadingMessage.value = message
-        _isAdLoading.value = loading
-        if (loading) {
-            // Safety watchdog: prevent ad overlay from hanging if network drops or SDK is slow in emulator
-            viewModelScope.launch {
-                delay(3000)
-                if (_isAdLoading.value) {
-                    _isAdLoading.value = false
-                }
-            }
-        }
+        feedbackManager.playClick()
     }
 
     fun submitVictoryScore(playerName: String) {
@@ -402,9 +364,40 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    // Modal section openers and closers
+    fun openLevelsSection() {
+        _isLevelsSectionOpen.value = true
+        _isMenuOpen.value = false
+        feedbackManager.playClick()
+    }
+
+    fun closeLevelsSection() {
+        _isLevelsSectionOpen.value = false
+    }
+
+    fun openInstructionsSection() {
+        _isInstructionsSectionOpen.value = true
+        _isMenuOpen.value = false
+        feedbackManager.playClick()
+    }
+
+    fun closeInstructionsSection() {
+        _isInstructionsSectionOpen.value = false
+    }
+
+    fun openMenu() {
+        _isMenuOpen.value = true
+        feedbackManager.playClick()
+    }
+
+    fun closeMenu() {
+        _isMenuOpen.value = false
+    }
+
     fun openLeaderboard(tabDifficulty: Difficulty? = null) {
         tabDifficulty?.let { _leaderboardFilter.value = it }
         _isLeaderboardOpen.value = true
+        _isMenuOpen.value = false
         feedbackManager.playClick()
     }
 
@@ -426,13 +419,9 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         _isVictoryDialogOpen.value = false
     }
 
-    fun finishSplashLoading() {
-        _isSplashFinished.value = true
-        feedbackManager.playStartupChime()
-    }
-
     fun openSettings() {
         _isSettingsOpen.value = true
+        _isMenuOpen.value = false
         feedbackManager.playClick()
     }
 
@@ -454,6 +443,7 @@ class PuzzleViewModel(application: Application) : AndroidViewModel(application) 
         _volumePercent.value = clamped
         feedbackManager.volumePercent = clamped
         prefs.edit().putInt("sound_volume_percent", clamped).apply()
+        feedbackManager.playClick()
     }
 
     fun setVibrationEnabled(enabled: Boolean) {

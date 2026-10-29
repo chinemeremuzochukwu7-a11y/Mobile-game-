@@ -1,81 +1,48 @@
 package com.example.ui
 
-import android.app.Activity
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Leaderboard
-import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material.icons.filled.VolumeMute
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.data.model.Difficulty
-import com.example.data.model.TileTheme
-import com.example.ads.AdMobBannerView
-import com.example.ui.components.AdLoadingOverlay
-import com.example.ui.components.DifficultySelector
-import com.example.ui.components.GameControls
-import com.example.ui.components.GameSplashScreen
+import com.example.ui.components.BotanicalFoliageSprig
+import com.example.ui.components.GameMenuDialog
 import com.example.ui.components.HowToPlayDialog
 import com.example.ui.components.LeaderboardDialog
-import com.example.ui.components.LevelOneTutorialBanner
-import com.example.ui.components.LevelSelectorBar
-import com.example.ui.components.PuzzleBoard
+import com.example.ui.components.LevelsSectionDialog
 import com.example.ui.components.SettingsSidebar
-import com.example.ui.components.StatsBar
 import com.example.ui.components.VictoryDialog
-import androidx.compose.material.icons.filled.Settings
-import com.example.ui.theme.DeepNavy
-import com.example.ui.theme.GoldTrophy
-import com.example.ui.theme.NeonCyan
-import com.example.ui.theme.NeonIndigo
-import com.example.ui.theme.SurfaceBorder
-import com.example.ui.theme.SurfaceCard
-import com.example.ui.theme.SurfaceCardElevated
-import com.example.ui.theme.TextMuted
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.components.WoodBottomControls
+import com.example.ui.components.WoodHeaderWidget
+import com.example.ui.components.WoodPlankBackground
+import com.example.ui.components.WoodPuzzleBoard
 
+/**
+ * Main Game Interface designed to match the user's reference image exactly:
+ * - Natural vertical honey-wood plank background
+ * - Arched sculpted wooden top header with undo button, moves counter, level ribbon, and parchment record
+ * - Chunky rounded wooden puzzle board with carved numbers, crimson target digits, and brushed steel tile with screws
+ * - Four circular wooden bottom action buttons (💡 Hint, ↻ Reset, 🔍 Peek, ⏭ Next)
+ * - Fixed, non-scrolling native mobile game viewport (no up/down scrolling)
+ * - Levels and instructions separated cleanly into dedicated overlay sections
+ */
 @Composable
 fun PuzzleScreen(
     viewModel: PuzzleViewModel = viewModel()
@@ -83,342 +50,198 @@ fun PuzzleScreen(
     val difficulty by viewModel.difficulty.collectAsStateWithLifecycle()
     val currentLevelNumber by viewModel.currentLevelNumber.collectAsStateWithLifecycle()
     val maxUnlockedLevel by viewModel.maxUnlockedLevel.collectAsStateWithLifecycle()
-    val isHowToPlayOpen by viewModel.isHowToPlayOpen.collectAsStateWithLifecycle()
-    val isTutorialRecognized by viewModel.isTutorialRecognized.collectAsStateWithLifecycle()
 
     val board by viewModel.board.collectAsStateWithLifecycle()
     val moves by viewModel.moves.collectAsStateWithLifecycle()
     val timeElapsedMillis by viewModel.timeElapsedMillis.collectAsStateWithLifecycle()
-    val gameState by viewModel.gameState.collectAsStateWithLifecycle()
-    val tileTheme by viewModel.tileTheme.collectAsStateWithLifecycle()
     val hintIndex by viewModel.hintIndex.collectAsStateWithLifecycle()
     val isPeeking by viewModel.isPeeking.collectAsStateWithLifecycle()
     val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val bestRecord by viewModel.bestRecord.collectAsStateWithLifecycle()
 
+    // Modals and dedicated sections
+    val isLevelsSectionOpen by viewModel.isLevelsSectionOpen.collectAsStateWithLifecycle()
+    val isInstructionsSectionOpen by viewModel.isInstructionsSectionOpen.collectAsStateWithLifecycle()
+    val isMenuOpen by viewModel.isMenuOpen.collectAsStateWithLifecycle()
+    val isSettingsOpen by viewModel.isSettingsOpen.collectAsStateWithLifecycle()
     val isLeaderboardOpen by viewModel.isLeaderboardOpen.collectAsStateWithLifecycle()
     val leaderboardFilter by viewModel.leaderboardFilter.collectAsStateWithLifecycle()
     val isShowingOnlyUserScores by viewModel.isShowingOnlyUserScores.collectAsStateWithLifecycle()
     val leaderboardScores by viewModel.leaderboardScores.collectAsStateWithLifecycle()
+
+    val isSoundOn by viewModel.isSoundEnabled.collectAsStateWithLifecycle()
+    val soundVolumePercent by viewModel.volumePercent.collectAsStateWithLifecycle()
+    val isVibrationOn by viewModel.isVibrationEnabled.collectAsStateWithLifecycle()
+    val isAnimationsOn by viewModel.isAnimationsEnabled.collectAsStateWithLifecycle()
 
     val isVictoryDialogOpen by viewModel.isVictoryDialogOpen.collectAsStateWithLifecycle()
     val victoryScore by viewModel.victoryScore.collectAsStateWithLifecycle()
     val victoryStars by viewModel.victoryStars.collectAsStateWithLifecycle()
     val lastPlayerName by viewModel.lastPlayerName.collectAsStateWithLifecycle()
     val isScoreSubmitted by viewModel.isScoreSubmitted.collectAsStateWithLifecycle()
-    val isAdLoading by viewModel.isAdLoading.collectAsStateWithLifecycle()
-    val adLoadingMessage by viewModel.adLoadingMessage.collectAsStateWithLifecycle()
 
-    val isSplashFinished by viewModel.isSplashFinished.collectAsStateWithLifecycle()
-    val isSettingsOpen by viewModel.isSettingsOpen.collectAsStateWithLifecycle()
-    val isSoundOn by viewModel.isSoundEnabled.collectAsStateWithLifecycle()
-    val soundVolumePercent by viewModel.volumePercent.collectAsStateWithLifecycle()
-    val isVibrationOn by viewModel.isVibrationEnabled.collectAsStateWithLifecycle()
-    val isAnimationsOn by viewModel.isAnimationsEnabled.collectAsStateWithLifecycle()
-    val isAdsRemoved by viewModel.billingHelper.isAdsRemoved.collectAsStateWithLifecycle()
-    val billingMessage by viewModel.billingHelper.billingStatusMessage.collectAsStateWithLifecycle()
-
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = DeepNavy
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .statusBarsPadding(),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Column(
+    WoodPlankBackground {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = Color.Transparent
+        ) { innerPadding ->
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .widthIn(max = 480.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(innerPadding)
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
+                contentAlignment = Alignment.Center
             ) {
-                // Top Header Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Fixed, Non-scrolling Game Viewport
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = 480.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Logo & App Name
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    // 1. Top Arched Sculpted Wooden Bar (Undo, MOVES, LEVEL 1, Hourglass, Parchment, Menu)
+                    WoodHeaderWidget(
+                        moves = moves,
+                        levelNumber = currentLevelNumber,
+                        timeElapsedMillis = timeElapsedMillis,
+                        bestRecord = bestRecord,
+                        onUndoClick = {
+                            if (canUndo) viewModel.undoMove()
+                        },
+                        onLevelClick = { viewModel.openLevelsSection() },
+                        onRecordClick = { viewModel.openLeaderboard(difficulty) },
+                        onMenuClick = { viewModel.openMenu() }
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 2. Center Wooden Board Frame with Chunky Wooden & Metal Tiles
+                    Box(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(NeonIndigo)
-                                .border(1.dp, NeonCyan, RoundedCornerShape(12.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Extension,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "Puzzle Master",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = TextPrimary
-                            )
-                            Text(
-                                text = "Speed Slider Challenge",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = NeonCyan,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                        WoodPuzzleBoard(
+                            board = board,
+                            gridSize = difficulty.gridSize,
+                            hintIndex = hintIndex,
+                            isPeeking = isPeeking,
+                            onTileClick = { index -> viewModel.onTileClick(index) }
+                        )
                     }
 
-                    // Header Controls: How to play, Settings sidebar & Leaderboard
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // 3. Bottom 4 Circular Wooden Buttons with Decorative Foliage
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.BottomStart
                     ) {
-                        // How to play / directions
-                        IconButton(
-                            onClick = { viewModel.openHowToPlayDialog() },
+                        // Soft botanical leaf sprig in the bottom-left corner
+                        BotanicalFoliageSprig(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(SurfaceCardElevated)
-                                .border(1.dp, SurfaceBorder, CircleShape)
-                                .testTag("top_how_to_play_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.HelpOutline,
-                                contentDescription = "How to Play",
-                                tint = NeonCyan,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                                .offset(x = (-6).dp, y = 14.dp)
+                                .scale(1.1f)
+                        )
 
-                        // Settings & Audio Sidebar button
-                        IconButton(
-                            onClick = { viewModel.openSettings() },
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(SurfaceCardElevated)
-                                .border(1.dp, SurfaceBorder, CircleShape)
-                                .testTag("top_settings_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings and Audio",
-                                tint = NeonCyan,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        // Global Leaderboard Button
-                        IconButton(
-                            onClick = { viewModel.openLeaderboard(difficulty) },
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(GoldTrophy.copy(alpha = 0.15f))
-                                .border(1.dp, GoldTrophy.copy(alpha = 0.6f), CircleShape)
-                                .testTag("top_leaderboard_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.EmojiEvents,
-                                contentDescription = "Global Leaderboard",
-                                tint = GoldTrophy,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
+                        // 4 Interactive Wooden Action Buttons (💡, ↻, 🔍, ⏭)
+                        WoodBottomControls(
+                            onHintClick = { viewModel.requestHint() },
+                            onRestartClick = { viewModel.restartCurrentLevel() },
+                            onPeekClick = { viewModel.setPeeking(!isPeeking) },
+                            onNextLevelClick = { viewModel.playNextLevel() }
+                        )
                     }
                 }
 
-                // Difficulty Selector (Easy 3x3, Medium 4x4, Hard 5x5)
-                DifficultySelector(
-                    selectedDifficulty = difficulty,
-                    onDifficultySelected = { newDiff ->
-                        viewModel.selectDifficulty(newDiff)
-                    }
-                )
+                // --- DEDICATED OVERLAY SECTIONS ---
 
-                // Level Selector Bar (10 progressive stages per difficulty)
-                LevelSelectorBar(
-                    difficulty = difficulty,
+                // Levels & Stages Section Modal
+                LevelsSectionDialog(
+                    isOpen = isLevelsSectionOpen,
+                    currentDifficulty = difficulty,
                     currentLevelNumber = currentLevelNumber,
                     maxUnlockedLevel = maxUnlockedLevel,
-                    onSelectLevel = { lvl -> viewModel.selectLevel(lvl) }
+                    onSelectDifficulty = { diff -> viewModel.selectDifficulty(diff) },
+                    onSelectLevel = { lvl -> viewModel.selectLevel(lvl) },
+                    onDismiss = { viewModel.closeLevelsSection() }
                 )
 
-                // Level 1 Tutorial Guidance & Recognition Banner
-                if (difficulty == Difficulty.EASY && currentLevelNumber == 1) {
-                    LevelOneTutorialBanner(
-                        isTutorialRecognized = isTutorialRecognized,
-                        onContinueAfterTutorial = { viewModel.completeTutorialAndPlay() }
-                    )
-                }
+                // How to Play & Instructions Modal
+                HowToPlayDialog(
+                    isOpen = isInstructionsSectionOpen,
+                    onStartGame = { viewModel.closeInstructionsSection() },
+                    onDismiss = { viewModel.closeInstructionsSection() }
+                )
 
-                // Stats Bar (Live Timer, Moves count, Best time, Pause)
-                StatsBar(
+                // Top Options Menu Modal
+                GameMenuDialog(
+                    isOpen = isMenuOpen,
+                    onOpenLevels = { viewModel.openLevelsSection() },
+                    onOpenInstructions = { viewModel.openInstructionsSection() },
+                    onOpenLeaderboard = { viewModel.openLeaderboard(difficulty) },
+                    onOpenSettings = { viewModel.openSettings() },
+                    onRestartLevel = {
+                        viewModel.restartCurrentLevel()
+                        viewModel.closeMenu()
+                    },
+                    onDismiss = { viewModel.closeMenu() }
+                )
+
+                // Settings Sidebar (with Horizontal Line Volume Control & Recommended 80% Notch)
+                SettingsSidebar(
+                    isOpen = isSettingsOpen,
+                    isSoundOn = isSoundOn,
+                    volumePercent = soundVolumePercent,
+                    isVibrationOn = isVibrationOn,
+                    isAnimationsOn = isAnimationsOn,
+                    onToggleSound = { viewModel.toggleSound() },
+                    onVolumeChanged = { vol -> viewModel.setSoundVolume(vol) },
+                    onToggleVibration = { viewModel.toggleHaptics() },
+                    onToggleAnimations = { viewModel.setAnimationsEnabled(!isAnimationsOn) },
+                    onOpenHowToPlay = {
+                        viewModel.closeSettings()
+                        viewModel.openInstructionsSection()
+                    },
+                    onClose = { viewModel.closeSettings() }
+                )
+
+                // Leaderboard Dialog
+                LeaderboardDialog(
+                    isOpen = isLeaderboardOpen,
+                    activeDifficulty = leaderboardFilter,
+                    isShowingOnlyUserScores = isShowingOnlyUserScores,
+                    scores = leaderboardScores,
+                    onFilterChange = { diff -> viewModel.setLeaderboardFilter(diff) },
+                    onToggleUserScores = { viewModel.toggleUserScoresOnly() },
+                    onDismiss = { viewModel.closeLeaderboard() }
+                )
+
+                // Victory Dialog
+                VictoryDialog(
+                    isOpen = isVictoryDialogOpen,
+                    difficulty = difficulty,
+                    currentLevelNumber = currentLevelNumber,
                     timeElapsedMillis = timeElapsedMillis,
                     moves = moves,
-                    gameState = gameState,
-                    bestRecord = bestRecord,
-                    onTogglePause = { viewModel.togglePause() }
+                    score = victoryScore,
+                    stars = victoryStars,
+                    initialPlayerName = lastPlayerName,
+                    isScoreSubmitted = isScoreSubmitted,
+                    onSubmitScore = { name -> viewModel.submitVictoryScore(name) },
+                    onPlayAgain = { viewModel.restartCurrentLevel() },
+                    onNextLevel = { viewModel.playNextLevel() },
+                    onViewLeaderboard = {
+                        viewModel.dismissVictoryDialog()
+                        viewModel.openLeaderboard(difficulty)
+                    },
+                    onDismiss = { viewModel.dismissVictoryDialog() }
                 )
-
-                // Interactive Puzzle Board
-                PuzzleBoard(
-                    board = board,
-                    difficulty = difficulty,
-                    gameState = gameState,
-                    tileTheme = tileTheme,
-                    hintIndex = hintIndex,
-                    isPeeking = isPeeking,
-                    onTileClick = { index -> viewModel.onTileClick(index) },
-                    onResumeClick = { viewModel.resumeGame() }
-                )
-
-                // Game Controls (New Game, Undo, Hint, Solved Peek, Theme)
-                GameControls(
-                    canUndo = canUndo,
-                    tileTheme = tileTheme,
-                    isPeeking = isPeeking,
-                    onNewGame = { viewModel.startNewGame() },
-                    onUndo = { viewModel.undoMove() },
-                    onHint = { viewModel.requestHint() },
-                    onTogglePeek = { viewModel.setPeeking(!isPeeking) },
-                    onCycleTheme = {
-                        val allThemes = TileTheme.values()
-                        val nextIndex = (tileTheme.ordinal + 1) % allThemes.size
-                        viewModel.setTileTheme(allThemes[nextIndex])
-                    }
-                )
-
-                // Google AdMob Banner (shown if ads not removed)
-                if (!isAdsRemoved) {
-                    AdMobBannerView(
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
-        }
-
-        val context = LocalContext.current
-        val activity = context as? Activity
-
-        // Settings & Audio Sidebar
-        SettingsSidebar(
-            isOpen = isSettingsOpen,
-            onClose = { viewModel.closeSettings() },
-            isSoundOn = isSoundOn,
-            onToggleSound = { viewModel.setSoundEnabled(it) },
-            volumePercent = soundVolumePercent,
-            onVolumeChanged = { viewModel.setSoundVolume(it) },
-            isVibrationOn = isVibrationOn,
-            onToggleVibration = { viewModel.setVibrationEnabled(it) },
-            isAnimationsOn = isAnimationsOn,
-            onToggleAnimations = { viewModel.setAnimationsEnabled(it) },
-            isHapticsOn = isVibrationOn,
-            onToggleHaptics = { viewModel.setVibrationEnabled(it) },
-            selectedTheme = tileTheme,
-            onSelectTheme = { viewModel.setTileTheme(it) },
-            isAdsRemoved = isAdsRemoved,
-            onPurchaseRemoveAds = {
-                activity?.let { act -> viewModel.billingHelper.purchaseRemoveAds(act) }
-            },
-            onPurchaseProPack = {
-                activity?.let { act -> viewModel.billingHelper.purchaseProPack(act) }
-            },
-            onRestorePurchases = { viewModel.billingHelper.restorePurchases() },
-            onOpenHowToPlay = {
-                viewModel.closeSettings()
-                viewModel.openHowToPlayDialog()
-            },
-            billingMessage = billingMessage
-        )
-
-        // How to Play / Directions Dialog
-        HowToPlayDialog(
-            isOpen = isHowToPlayOpen,
-            onStartGame = {
-                viewModel.closeHowToPlayDialog()
-                viewModel.selectDifficulty(Difficulty.EASY)
-                viewModel.selectLevel(1)
-            },
-            onDismiss = { viewModel.closeHowToPlayDialog() }
-        )
-
-        // Global Leaderboard Dialog
-        LeaderboardDialog(
-            isOpen = isLeaderboardOpen,
-            activeDifficulty = leaderboardFilter,
-            isShowingOnlyUserScores = isShowingOnlyUserScores,
-            scores = leaderboardScores,
-            onFilterChange = { newDiff -> viewModel.setLeaderboardFilter(newDiff) },
-            onToggleUserScores = { viewModel.toggleUserScoresOnly() },
-            onDismiss = { viewModel.closeLeaderboard() }
-        )
-
-        // Victory Celebration Dialog
-        VictoryDialog(
-            isOpen = isVictoryDialogOpen,
-            difficulty = difficulty,
-            currentLevelNumber = currentLevelNumber,
-            timeElapsedMillis = timeElapsedMillis,
-            moves = moves,
-            score = victoryScore,
-            stars = victoryStars,
-            initialPlayerName = lastPlayerName,
-            isScoreSubmitted = isScoreSubmitted,
-            onSubmitScore = { name -> viewModel.submitVictoryScore(name) },
-            onPlayAgain = {
-                viewModel.dismissVictoryDialog()
-                viewModel.startNewGame()
-            },
-            onNextLevel = {
-                if (!isAdsRemoved && activity != null) {
-                    viewModel.setAdLoading(true, "Connecting next puzzle challenge...")
-                    viewModel.adMobHelper.showInterstitial(activity) {
-                        viewModel.setAdLoading(false)
-                        viewModel.playNextLevel()
-                    }
-                } else {
-                    viewModel.playNextLevel()
-                }
-            },
-            onViewLeaderboard = {
-                viewModel.dismissVictoryDialog()
-                viewModel.openLeaderboard(difficulty)
-            },
-            onDismiss = { viewModel.dismissVictoryDialog() }
-        )
-
-        // Interstitial Ad Loading State Overlay (only in composition when active)
-        if (isAdLoading) {
-            AdLoadingOverlay(
-                isLoading = true,
-                message = adLoadingMessage,
-                subMessage = "Synchronizing next level...",
-                onDismiss = { viewModel.setAdLoading(false) }
-            )
-        }
-
-        // App Initial 1 to 100 Splash Loader (only in composition before finish)
-        if (!isSplashFinished) {
-            GameSplashScreen(
-                isCompleted = false,
-                onFinishLoading = { viewModel.finishSplashLoading() }
-            )
         }
     }
 }

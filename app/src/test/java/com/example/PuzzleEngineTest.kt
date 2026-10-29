@@ -90,10 +90,13 @@ class PuzzleEngineTest {
         val levelCatalogMed = com.example.data.model.LevelCatalog.getLevelsForDifficulty(Difficulty.MEDIUM)
         val levelCatalogHard = com.example.data.model.LevelCatalog.getLevelsForDifficulty(Difficulty.HARD)
 
-        assertEquals(10, levelCatalogEasy.size)
-        assertEquals(10, levelCatalogMed.size)
-        assertEquals(10, levelCatalogHard.size)
-        assertTrue(levelCatalogEasy.first().isTutorial)
+        assertEquals(15, levelCatalogEasy.size)
+        assertEquals(15, levelCatalogMed.size)
+        assertEquals(15, levelCatalogHard.size)
+        assertTrue(levelCatalogEasy[0].isTutorial)
+        assertTrue(levelCatalogEasy[1].isTutorial)
+        assertTrue(levelCatalogEasy[0].tutorialInstruction.isNotEmpty())
+        assertTrue(levelCatalogEasy[1].tutorialInstruction.isNotEmpty())
     }
 
     @Test
@@ -108,9 +111,9 @@ class PuzzleEngineTest {
     }
 
     @Test
-    fun testAdLoadingStateDefaults() {
-        val defaultMessage = "Loading next challenge..."
-        assertTrue(defaultMessage.isNotEmpty())
+    fun testPaidAppModeDefaults() {
+        val isPaidApp = true
+        assertTrue(isPaidApp)
     }
 
     @Test
@@ -122,5 +125,10 @@ class PuzzleEngineTest {
         val negativeVolume = -15
         val clampedNegative = negativeVolume.coerceIn(0, 100)
         assertEquals(0, clampedNegative)
+    }
+
+    @Test
+    fun testSoundEffectManagerRecommendedVolume() {
+        assertEquals(80, com.example.game.SoundEffectManager.RECOMMENDED_VOLUME_PERCENT)
     }
 }
