@@ -24,10 +24,12 @@ workflows:
           include: true
           source: true
     scripts:
-      - name: Set up local.properties
+      - name: Set up local.properties and Gradle wrapper
         script: |
           echo "Setting up Android SDK local.properties..."
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          chmod +x gradlew
+          ./gradlew --version
       - name: Set up keystore and code signing for sonance
         script: |
           echo "Configuring Android code signing with key alias: sonance"
@@ -51,8 +53,8 @@ workflows:
           fi
       - name: Run Android Unit Tests
         script: |
-          echo "Running unit tests for puzzle game..."
-          gradle :app:testDebugUnitTest --no-daemon
+          echo "Running unit tests for puzzle game with Gradle 9.3.1..."
+          ./gradlew :app:testDebugUnitTest --no-daemon
       - name: Build Android App Bundle (AAB) & Universal Release APK
         script: |
           echo "Building signed Release AAB and APK for Play Store..."
@@ -62,7 +64,7 @@ workflows:
             echo "Injecting sonance signing keys into Gradle build..."
             SIGNING_OPTS="-Pandroid.injected.signing.store.file=$ACTIVE_KEYSTORE -Pandroid.injected.signing.store.password=${STORE_PASSWORD:-$CM_KEYSTORE_PASSWORD} -Pandroid.injected.signing.key.alias=${KEY_ALIAS:-sonance} -Pandroid.injected.signing.key.password=${KEY_PASSWORD:-$CM_KEY_PASSWORD}"
           fi
-          gradle :app:bundleRelease :app:assembleRelease $SIGNING_OPTS --no-daemon
+          ./gradlew :app:bundleRelease :app:assembleRelease $SIGNING_OPTS --no-daemon
     artifacts:
       - app/build/outputs/**/*.aab
       - app/build/outputs/**/*.apk
@@ -84,11 +86,12 @@ workflows:
     max_build_duration: 30
     instance_type: mac_mini_m2
     scripts:
-      - name: Set up local.properties
+      - name: Set up local.properties and Gradle wrapper
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          chmod +x gradlew
       - name: Build Debug APK
         script: |
-          gradle :app:assembleDebug --no-daemon
+          ./gradlew :app:assembleDebug --no-daemon
     artifacts:
       - app/build/outputs/apk/debug/*.apk
