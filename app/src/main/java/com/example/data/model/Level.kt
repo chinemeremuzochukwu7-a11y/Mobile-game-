@@ -133,23 +133,40 @@ object LevelCatalog {
         Level(
             levelNumber = 15,
             title = "Grand Master 3x3",
-            subtitle = "Ultimate master test of 8-puzzle",
+            subtitle = "Ultimate mid-tier test of 8-puzzle",
             shuffleSteps = 95,
             parMoves = 80,
             parSeconds = 90
         )
-    )
+    ) + (16..30).map { lvl ->
+        val bonusNames = listOf(
+            "Amber Glide", "Timber Twist", "Oak Precision", "Cedar Loop", "Maple Matrix",
+            "Pine Pivot", "Teak Tempo", "Walnut Whirl", "Mahogany Rush", "Birch Blitz",
+            "Elm Echo", "Ash Ascent", "Redwood Trail", "Sequoia Crown", "Woodcraft Legend"
+        )
+        Level(
+            levelNumber = lvl,
+            title = bonusNames[lvl - 16],
+            subtitle = "Bonus 3x3 Challenge Stage $lvl",
+            shuffleSteps = 95 + (lvl - 15) * 6,
+            parMoves = 75 + (lvl - 15) * 3,
+            parSeconds = 85 + (lvl - 15) * 4
+        )
+    }
 
-    val mediumLevels: List<Level> = (1..15).map { lvl ->
+    val mediumLevels: List<Level> = (1..30).map { lvl ->
         val names = listOf(
             "Classic 15", "Quarter Turn", "Center Ring", "Four Corners",
             "Linear Flow", "Gridlock Breaker", "Rapid Transit", "Orbit Shift",
             "Matrix Maze", "Grand Master 15", "Neon Vortex", "Cyber Circuit",
-            "Quantum Grid", "Stellar Shift", "Apex 4x4"
+            "Quantum Grid", "Stellar Shift", "Apex 4x4",
+            "Bronze Gear", "Copper Track", "Silver Slide", "Iron Gate", "Brass Lock",
+            "Steel Beam", "Cobalt Wave", "Emerald Cross", "Crimson Core", "Amber Ridge",
+            "Obsidian Gate", "Golden Ratio", "Prism Turn", "Titan Glide", "Master 4x4"
         )
-        val shuffles = 18 + lvl * 10
-        val parM = 30 + lvl * 7
-        val parS = 50 + lvl * 12
+        val shuffles = 18 + lvl * 9
+        val parM = 30 + lvl * 6
+        val parS = 50 + lvl * 10
         Level(
             levelNumber = lvl,
             title = names[lvl - 1],
@@ -160,16 +177,19 @@ object LevelCatalog {
         )
     }
 
-    val hardLevels: List<Level> = (1..15).map { lvl ->
+    val hardLevels: List<Level> = (1..30).map { lvl ->
         val names = listOf(
             "24 Titan", "Deep Trench", "Grand Perimeter", "Labyrinth Walk",
             "Cascade Shift", "Hyper Spiral", "Quantum Flux", "Apex Predator",
             "Colosseum", "Immortal 24", "Obsidian Maze", "Celestial Sphere",
-            "Infinity Loop", "Supernova", "Zenith 5x5"
+            "Infinity Loop", "Supernova", "Zenith 5x5",
+            "Forge Walk", "Anvil Turn", "Riveted Path", "Clockwork 24", "Chronos Grid",
+            "Tempest Slide", "Atlas Burden", "Monolith", "Vanguard", "Sovereign 24",
+            "Horizon Shift", "Eclipse Ring", "Vortex Peak", "Summit Trial", "Legend 5x5"
         )
-        val shuffles = 35 + lvl * 16
-        val parM = 60 + lvl * 12
-        val parS = 100 + lvl * 16
+        val shuffles = 35 + lvl * 14
+        val parM = 60 + lvl * 10
+        val parS = 100 + lvl * 14
         Level(
             levelNumber = lvl,
             title = names[lvl - 1],
@@ -180,10 +200,31 @@ object LevelCatalog {
         )
     }
 
+    val expertLevels: List<Level> = (1..15).map { lvl ->
+        val names = listOf(
+            "Grandmaster Entry", "35 Labyrinth", "Twin Corners", "Six-Fold Path",
+            "Iron Fortress", "Royal Clockwork", "Deep Forest", "Titan Corridor",
+            "Endless Spiral", "Vault Breaker", "Sovereign Matrix", "Crown Jewel",
+            "Mythic Forge", "Eternal Grid", "Ultimate 6x6"
+        )
+        val shuffles = 60 + lvl * 20
+        val parM = 140 + lvl * 18
+        val parS = 200 + lvl * 22
+        Level(
+            levelNumber = lvl,
+            title = names[lvl - 1],
+            subtitle = "6x6 Expert Stage $lvl",
+            shuffleSteps = shuffles,
+            parMoves = parM,
+            parSeconds = parS
+        )
+    }
+
     fun getLevelsForDifficulty(difficulty: Difficulty): List<Level> = when (difficulty) {
         Difficulty.EASY -> easyLevels
         Difficulty.MEDIUM -> mediumLevels
         Difficulty.HARD -> hardLevels
+        Difficulty.EXPERT -> expertLevels
     }
 
     fun getLevel(difficulty: Difficulty, levelNumber: Int): Level {

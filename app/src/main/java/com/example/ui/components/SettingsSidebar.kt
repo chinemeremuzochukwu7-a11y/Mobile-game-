@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,8 +26,8 @@ import androidx.compose.material.icons.filled.Animation
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeMute
 import androidx.compose.material.icons.filled.VolumeUp
@@ -47,8 +48,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.model.TileTheme
 import com.example.ui.theme.DeepNavy
-import com.example.ui.theme.GoldTrophy
 import com.example.ui.theme.NeonAmber
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonEmerald
@@ -62,7 +63,7 @@ import com.example.ui.theme.TextSecondary
 
 /**
  * Settings sidebar for Audio, Volume Control (horizontal line with recommended setting),
- * Vibration, Animations, and Premium Paid App information.
+ * Zen Mode, Board Material Themes, Vibration, Animations, and Free Premium Edition info.
  */
 @Composable
 fun SettingsSidebar(
@@ -71,10 +72,14 @@ fun SettingsSidebar(
     volumePercent: Int,
     isVibrationOn: Boolean,
     isAnimationsOn: Boolean,
+    isZenMode: Boolean,
+    selectedTheme: TileTheme,
     onToggleSound: (Boolean) -> Unit,
     onVolumeChanged: (Int) -> Unit,
     onToggleVibration: (Boolean) -> Unit,
     onToggleAnimations: (Boolean) -> Unit,
+    onToggleZenMode: (Boolean) -> Unit,
+    onSelectTheme: (TileTheme) -> Unit,
     onOpenHowToPlay: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
@@ -91,10 +96,10 @@ fun SettingsSidebar(
         Surface(
             modifier = Modifier
                 .fillMaxHeight()
-                .fillMaxWidth(0.85f)
+                .fillMaxWidth(0.86f)
                 .align(Alignment.CenterEnd)
                 .clickable(enabled = false) { /* Consume clicks */ },
-            color = SurfaceDark,
+            color = Color(0xFF381604),
             shadowElevation = 16.dp
         ) {
             Column(
@@ -111,10 +116,10 @@ fun SettingsSidebar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Settings & Audio",
+                        text = "Settings & Premium",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Black,
-                        color = TextPrimary
+                        color = Color(0xFFFBE5C5)
                     )
 
                     IconButton(
@@ -122,20 +127,20 @@ fun SettingsSidebar(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(SurfaceCardElevated)
-                            .border(1.dp, SurfaceBorder, CircleShape)
+                            .background(Color(0xFF5A250B))
+                            .border(1.dp, Color(0xFF8F4111), CircleShape)
                             .testTag("close_settings_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close Settings",
-                            tint = TextSecondary,
+                            tint = Color(0xFFFBE5C5),
                             modifier = Modifier.size(18.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Section 1: Audio & Volume Control
                 SettingsSectionHeader(title = "AUDIO & VOLUME")
@@ -160,10 +165,76 @@ fun SettingsSidebar(
                     onVolumeChanged = onVolumeChanged
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Section 2: Haptics & Performance
-                SettingsSectionHeader(title = "HAPTICS & PERFORMANCE")
+                // Section 2: Premium Board Themes (Unlocked Free)
+                SettingsSectionHeader(title = "BOARD MATERIAL THEMES (UNLOCKED)")
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TileTheme.values().forEach { theme ->
+                        val isSelected = theme == selectedTheme
+                        val chipColor = when (theme) {
+                            TileTheme.CLASSIC_WOOD -> Color(0xFFE5943B)
+                            TileTheme.DARK_WALNUT -> Color(0xFF8D5524)
+                            TileTheme.MINIMALIST_NEON -> NeonCyan
+                            TileTheme.NATURE -> NeonEmerald
+                            TileTheme.STEEL_INDUSTRIAL -> Color(0xFFCBD5E1)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isSelected) Color(0xFF6B2F0B) else Color(0xFF4B1E07)
+                                )
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) chipColor else Color(0xFF7A370A),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable { onSelectTheme(theme) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                                .testTag("theme_chip_${theme.name.lowercase()}"),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(chipColor)
+                                    .border(1.dp, Color.White.copy(alpha = 0.7f), CircleShape)
+                            )
+                            Text(
+                                text = theme.displayName,
+                                color = if (isSelected) Color(0xFFFFF6EA) else Color(0xFFD6A068),
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Section 3: Gameplay, Zen Mode & Haptics
+                SettingsSectionHeader(title = "GAMEPLAY & HAPTICS")
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                SettingsToggleRow(
+                    title = "Zen Mode (Relaxed Play)",
+                    subtitle = "No countdown warning beeps — solve at your own pace",
+                    icon = Icons.Default.SelfImprovement,
+                    checked = isZenMode,
+                    onCheckedChange = onToggleZenMode
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -185,10 +256,10 @@ fun SettingsSidebar(
                     onCheckedChange = onToggleAnimations
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Section 3: Paid Edition Status
-                SettingsSectionHeader(title = "PLAY STORE EDITION")
+                // Section 4: Play Store Free + Premium Features Unlocked
+                SettingsSectionHeader(title = "PLAY STORE FREE EDITION")
 
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -196,8 +267,8 @@ fun SettingsSidebar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, NeonEmerald.copy(alpha = 0.5f), RoundedCornerShape(14.dp)),
-                    color = SurfaceCard
+                        .border(1.dp, NeonEmerald.copy(alpha = 0.65f), RoundedCornerShape(14.dp)),
+                    color = Color(0xFF4B1E07)
                 ) {
                     Column(
                         modifier = Modifier
@@ -216,17 +287,17 @@ fun SettingsSidebar(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Paid App License",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                                text = "Free Game • All Premium Features Open",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFFBE5C5)
                             )
                         }
 
                         Text(
-                            text = "100% Ad-Free Premium Version. All 45 levels, hint features, and audio effects unlocked with zero ads or recurring fees.",
+                            text = "100% Free with zero ads. Enjoy all 105 levels (3x3 to 6x6), Live Coach horizontal progress line, step-by-step Get Helped arrows, swipe controls, Zen Mode, and 5 board themes!",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
+                            color = Color(0xFFD6A068),
                             lineHeight = 16.sp
                         )
                     }
@@ -239,9 +310,9 @@ fun SettingsSidebar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp))
+                        .border(1.dp, Color(0xFF8F4111), RoundedCornerShape(14.dp))
                         .clickable { onOpenHowToPlay() },
-                    color = SurfaceCard
+                    color = Color(0xFF4B1E07)
                 ) {
                     Row(
                         modifier = Modifier
@@ -253,14 +324,14 @@ fun SettingsSidebar(
                         Icon(
                             imageVector = Icons.Default.HelpOutline,
                             contentDescription = null,
-                            tint = NeonCyan,
+                            tint = Color(0xFFE5943B),
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "Game Rules & How to Play",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary
+                            color = Color(0xFFFBE5C5)
                         )
                     }
                 }
@@ -275,7 +346,7 @@ private fun SettingsSectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.ExtraBold,
-        color = NeonAmber,
+        color = Color(0xFFE5943B),
         letterSpacing = 1.sp,
         fontSize = 11.sp
     )
@@ -293,8 +364,8 @@ private fun SettingsToggleRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, SurfaceBorder, RoundedCornerShape(14.dp)),
-        color = SurfaceCard
+            .border(1.dp, Color(0xFF7A370A), RoundedCornerShape(14.dp)),
+        color = Color(0xFF4B1E07)
     ) {
         Row(
             modifier = Modifier
@@ -310,7 +381,7 @@ private fun SettingsToggleRow(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (checked) NeonCyan else TextMuted,
+                    tint = if (checked) Color(0xFF4ADE80) else Color(0xFFA0724B),
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -319,12 +390,12 @@ private fun SettingsToggleRow(
                         text = title,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
+                        color = Color(0xFFFBE5C5)
                     )
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
+                        color = Color(0xFFD6A068),
                         fontSize = 11.sp
                     )
                 }
@@ -334,10 +405,10 @@ private fun SettingsToggleRow(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.Black,
-                    checkedTrackColor = NeonCyan,
-                    uncheckedThumbColor = TextMuted,
-                    uncheckedTrackColor = SurfaceCardElevated
+                    checkedThumbColor = Color(0xFF381604),
+                    checkedTrackColor = Color(0xFFE5943B),
+                    uncheckedThumbColor = Color(0xFFD6A068),
+                    uncheckedTrackColor = Color(0xFF2B1003)
                 )
             )
         }

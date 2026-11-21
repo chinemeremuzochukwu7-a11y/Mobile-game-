@@ -86,14 +86,18 @@ fun PuzzleBoard(
 
     val boardBorderColor = when (tileTheme) {
         TileTheme.CLASSIC_WOOD -> Color(0xFF78350F)
+        TileTheme.DARK_WALNUT -> Color(0xFF5D341E)
         TileTheme.MINIMALIST_NEON -> NeonCyan.copy(alpha = 0.6f)
         TileTheme.NATURE -> Color(0xFF065F46)
+        TileTheme.STEEL_INDUSTRIAL -> Color(0xFF94A3B8)
     }
 
     val boardBg = when (tileTheme) {
         TileTheme.CLASSIC_WOOD -> Brush.radialGradient(listOf(Color(0xFF2E1C0C), Color(0xFF1B1007)))
+        TileTheme.DARK_WALNUT -> Brush.radialGradient(listOf(Color(0xFF261409), Color(0xFF140903)))
         TileTheme.MINIMALIST_NEON -> Brush.radialGradient(listOf(Color(0xFF0F172A), Color(0xFF090D16)))
         TileTheme.NATURE -> Brush.radialGradient(listOf(Color(0xFF062B1D), Color(0xFF03160E)))
+        TileTheme.STEEL_INDUSTRIAL -> Brush.radialGradient(listOf(Color(0xFF334155), Color(0xFF1E293B)))
     }
 
     BoxWithConstraints(
@@ -275,16 +279,20 @@ private fun PuzzleTile(
 
     val defaultBorderColor = when (tileTheme) {
         TileTheme.CLASSIC_WOOD -> Color(0xFFFDE68A).copy(alpha = 0.35f) // Warm golden bevel edge
+        TileTheme.DARK_WALNUT -> Color(0xFFD4A373).copy(alpha = 0.45f)
         TileTheme.MINIMALIST_NEON -> NeonCyan.copy(alpha = 0.5f) // Cyberpunk electric cyan edge
         TileTheme.NATURE -> Color(0xFFA7F3D0).copy(alpha = 0.4f) // Fresh botanical mint edge
+        TileTheme.STEEL_INDUSTRIAL -> Color(0xFFCBD5E1).copy(alpha = 0.6f)
     }
 
     val borderColor = when {
         isHinted -> NeonAmber
         isCorrect -> when (tileTheme) {
             TileTheme.CLASSIC_WOOD -> Color(0xFFFBBF24)
+            TileTheme.DARK_WALNUT -> Color(0xFFFFD166)
             TileTheme.MINIMALIST_NEON -> NeonCyan
             TileTheme.NATURE -> Color(0xFF34D399)
+            TileTheme.STEEL_INDUSTRIAL -> Color(0xFF38BDF8)
         }
         else -> defaultBorderColor
     }
@@ -297,8 +305,10 @@ private fun PuzzleTile(
 
     val textColor = when (tileTheme) {
         TileTheme.CLASSIC_WOOD -> Color(0xFFFEF3C7) // Parchment cream
+        TileTheme.DARK_WALNUT -> Color(0xFFFFF3E0)
         TileTheme.MINIMALIST_NEON -> Color.White // Bright white neon
         TileTheme.NATURE -> Color(0xFFF0FDF4) // Dewdrop white
+        TileTheme.STEEL_INDUSTRIAL -> Color(0xFF0F172A)
     }
 
     Box(
@@ -367,14 +377,18 @@ private fun EmptySlot(gridSize: Int, tileTheme: TileTheme) {
 
     val emptyBg = when (tileTheme) {
         TileTheme.CLASSIC_WOOD -> Color(0xFF1E1107).copy(alpha = 0.6f)
+        TileTheme.DARK_WALNUT -> Color(0xFF140903).copy(alpha = 0.7f)
         TileTheme.MINIMALIST_NEON -> Color(0xFF070B14).copy(alpha = 0.7f)
         TileTheme.NATURE -> Color(0xFF03160E).copy(alpha = 0.65f)
+        TileTheme.STEEL_INDUSTRIAL -> Color(0xFF1E293B).copy(alpha = 0.75f)
     }
 
     val emptyBorder = when (tileTheme) {
         TileTheme.CLASSIC_WOOD -> Color(0xFF451A03).copy(alpha = 0.4f)
+        TileTheme.DARK_WALNUT -> Color(0xFF5D341E).copy(alpha = 0.4f)
         TileTheme.MINIMALIST_NEON -> NeonCyan.copy(alpha = 0.2f)
         TileTheme.NATURE -> Color(0xFF047857).copy(alpha = 0.25f)
+        TileTheme.STEEL_INDUSTRIAL -> Color(0xFF64748B).copy(alpha = 0.4f)
     }
 
     Box(
@@ -405,6 +419,10 @@ private fun getTileBrush(value: Int, totalTiles: Int, theme: TileTheme): Brush {
             Brush.verticalGradient(listOf(topWood, bottomWood))
         }
 
+        TileTheme.DARK_WALNUT -> {
+            Brush.verticalGradient(listOf(Color(0xFF7F4F24), Color(0xFF3C1E08)))
+        }
+
         TileTheme.MINIMALIST_NEON -> {
             // Sleek electric cyberpunk hues: Electric Cyan -> Ultraviolet Purple -> Hot Neon Rose
             val c1 = when {
@@ -433,6 +451,10 @@ private fun getTileBrush(value: Int, totalTiles: Int, theme: TileTheme): Brush {
                 else -> Color(0xFF064E3B) // Dark Moss / Evergreen
             }
             Brush.linearGradient(listOf(topGreen, bottomGreen))
+        }
+
+        TileTheme.STEEL_INDUSTRIAL -> {
+            Brush.verticalGradient(listOf(Color(0xFFE2E8F0), Color(0xFF94A3B8)))
         }
     }
 }

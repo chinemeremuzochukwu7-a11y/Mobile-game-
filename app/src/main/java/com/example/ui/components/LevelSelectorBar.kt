@@ -77,6 +77,7 @@ fun LevelSelectorBar(
         Difficulty.EASY -> Color(0xFFF59E0B) // Classic Wood amber
         Difficulty.MEDIUM -> NeonCyan // Minimalist Neon cyber cyan
         Difficulty.HARD -> Color(0xFF10B981) // Nature emerald
+        Difficulty.EXPERT -> NeonRose // Expert crimson
     }
 
     Column(

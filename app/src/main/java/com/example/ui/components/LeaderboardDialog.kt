@@ -183,7 +183,8 @@ fun LeaderboardDialog(
                                 Text(
                                     text = "${diff.title} (${diff.gridSize}x${diff.gridSize})",
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 13.sp,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
                                     color = if (selected) TextPrimary else TextSecondary
                                 )
                             },

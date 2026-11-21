@@ -31,6 +31,14 @@ enum class Difficulty(
         parMoves = 180,
         parSeconds = 240,
         baseScore = 7000
+    ),
+    EXPERT(
+        title = "Expert",
+        subtitle = "6x6 Grid (35 tiles)",
+        gridSize = 6,
+        parMoves = 320,
+        parSeconds = 420,
+        baseScore = 12000
     );
 
     val totalTiles: Int
@@ -52,10 +60,12 @@ enum class Difficulty(
             else -> 1
         }
     }
+
     fun defaultTheme(): TileTheme = when (this) {
         EASY -> TileTheme.CLASSIC_WOOD
         MEDIUM -> TileTheme.MINIMALIST_NEON
         HARD -> TileTheme.NATURE
+        EXPERT -> TileTheme.DARK_WALNUT
     }
 }
 
@@ -69,6 +79,11 @@ enum class TileTheme(
         description = "Warm teak & mahogany craftsmanship for relaxed solving",
         associatedDifficulty = Difficulty.EASY
     ),
+    DARK_WALNUT(
+        displayName = "Dark Walnut",
+        description = "Rich espresso walnut planks with warm brass highlights",
+        associatedDifficulty = Difficulty.EXPERT
+    ),
     MINIMALIST_NEON(
         displayName = "Minimalist Neon",
         description = "Cyberpunk high-contrast cyan, indigo, and ultraviolet",
@@ -77,6 +92,11 @@ enum class TileTheme(
     NATURE(
         displayName = "Nature",
         description = "Organic emerald forest, moss gradients, and earthy jade",
+        associatedDifficulty = Difficulty.HARD
+    ),
+    STEEL_INDUSTRIAL(
+        displayName = "Brushed Steel",
+        description = "Machined alloy plates with industrial corner rivets",
         associatedDifficulty = Difficulty.HARD
     )
 }

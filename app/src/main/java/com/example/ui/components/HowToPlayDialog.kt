@@ -153,24 +153,24 @@ fun HowToPlayDialog(
                     DirectionStepCard(
                         stepNumber = 1,
                         icon = Icons.Default.TouchApp,
-                        title = "Level 1: The Basics (Sliding & Arranging)",
-                        description = "Tap any numbered tile next to the empty slot to slide it in. The glowing hint guides your initial move. Arrange tiles 1 through 8 in sequential order!",
+                        title = "Level 1: Tap or Swipe to Slide",
+                        description = "Tap or swipe any numbered tile toward the empty slot to slide it in. Arrange tiles 1 through 8 (or up to 35 on 6x6) in order!",
                         accentColor = NeonCyan
                     )
 
                     DirectionStepCard(
                         stepNumber = 2,
                         icon = Icons.Default.FormatListNumbered,
-                        title = "Level 2: Strategy (Row-by-Row Solving)",
-                        description = "Strategy tip: Solve and lock Row 1 first (1, 2, 3)! Watch the glowing green indicator dots that show when a tile is at its home spot.",
+                        title = "Level 2 & Top Coach Line",
+                        description = "Solve Row 1 first! Watch the horizontal Coach Line at the top — green means you're getting closer, gold means keep trying, and red warns when drifting away.",
                         accentColor = NeonEmerald
                     )
 
                     DirectionStepCard(
                         stepNumber = 3,
-                        icon = Icons.Default.Speed,
-                        title = "Audio Feedback & Timer Warnings",
-                        description = "Experience tactile audio on moves, victory chimes, and urgent timer warning beeps as you approach par time. Configure volume with the horizontal line slider!",
+                        icon = Icons.Default.Lightbulb,
+                        title = "Need Help? Tap 'Get Helped'",
+                        description = "Tap 'Get Helped' on the top Coach bar anytime to see the exact next move and activate live directional arrows (↑ ↓ ← →) directly on the board!",
                         accentColor = NeonAmber
                     )
                 }

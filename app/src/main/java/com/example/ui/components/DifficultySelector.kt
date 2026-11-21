@@ -57,12 +57,14 @@ fun DifficultySelector(
                 Difficulty.EASY -> Color(0xFFF59E0B) // Classic Wood amber
                 Difficulty.MEDIUM -> NeonCyan // Minimalist Neon cyber cyan
                 Difficulty.HARD -> Color(0xFF10B981) // Nature emerald
+                Difficulty.EXPERT -> NeonRose // Dark Walnut / Expert crimson
             }
 
             val themeName = when (difficulty) {
                 Difficulty.EASY -> "Classic Wood"
                 Difficulty.MEDIUM -> "Minimalist Neon"
                 Difficulty.HARD -> "Nature"
+                Difficulty.EXPERT -> "Dark Walnut"
             }
 
             val bgColor by animateColorAsState(

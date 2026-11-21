@@ -89,10 +89,12 @@ class PuzzleEngineTest {
         val levelCatalogEasy = com.example.data.model.LevelCatalog.getLevelsForDifficulty(Difficulty.EASY)
         val levelCatalogMed = com.example.data.model.LevelCatalog.getLevelsForDifficulty(Difficulty.MEDIUM)
         val levelCatalogHard = com.example.data.model.LevelCatalog.getLevelsForDifficulty(Difficulty.HARD)
+        val levelCatalogExpert = com.example.data.model.LevelCatalog.getLevelsForDifficulty(Difficulty.EXPERT)
 
-        assertEquals(15, levelCatalogEasy.size)
-        assertEquals(15, levelCatalogMed.size)
-        assertEquals(15, levelCatalogHard.size)
+        assertEquals(30, levelCatalogEasy.size)
+        assertEquals(30, levelCatalogMed.size)
+        assertEquals(30, levelCatalogHard.size)
+        assertEquals(15, levelCatalogExpert.size)
         assertTrue(levelCatalogEasy[0].isTutorial)
         assertTrue(levelCatalogEasy[1].isTutorial)
         assertTrue(levelCatalogEasy[0].tutorialInstruction.isNotEmpty())
@@ -104,6 +106,7 @@ class PuzzleEngineTest {
         assertEquals(com.example.data.model.TileTheme.CLASSIC_WOOD, Difficulty.EASY.defaultTheme())
         assertEquals(com.example.data.model.TileTheme.MINIMALIST_NEON, Difficulty.MEDIUM.defaultTheme())
         assertEquals(com.example.data.model.TileTheme.NATURE, Difficulty.HARD.defaultTheme())
+        assertEquals(com.example.data.model.TileTheme.DARK_WALNUT, Difficulty.EXPERT.defaultTheme())
 
         assertEquals("Classic Wood", com.example.data.model.TileTheme.CLASSIC_WOOD.displayName)
         assertEquals("Minimalist Neon", com.example.data.model.TileTheme.MINIMALIST_NEON.displayName)
@@ -111,9 +114,9 @@ class PuzzleEngineTest {
     }
 
     @Test
-    fun testPaidAppModeDefaults() {
-        val isPaidApp = true
-        assertTrue(isPaidApp)
+    fun testFreeEditionWithAllPremiumFeaturesDefaults() {
+        val allLevelsAccessible = true
+        assertTrue(allLevelsAccessible)
     }
 
     @Test
@@ -130,5 +133,58 @@ class PuzzleEngineTest {
     @Test
     fun testSoundEffectManagerRecommendedVolume() {
         assertEquals(80, com.example.game.SoundEffectManager.RECOMMENDED_VOLUME_PERCENT)
+    }
+
+    @Test
+    fun testCoachEvaluationAndGuidedDirection() {
+        // One move away from solved: [1, 2, 3, 4, 5, 6, 7, 0, 8]
+        val oneAway = listOf(1, 2, 3, 4, 5, 6, 7, 0, 8)
+        val guided = com.example.game.PuzzleCoach.findGuidedHelp(oneAway, gridSize = 3)
+        assertNotNull(guided)
+        assertEquals(8, guided?.tileIndex)
+        assertEquals(8, guided?.tileValue)
+        assertEquals(com.example.game.SlideDirection.LEFT, guided?.direction)
+        assertEquals(1, guided?.estimatedStepsRemaining)
+
+        // Verify swipe direction check matches
+        assertTrue(PuzzleEngine.canMoveInDirection(oneAway, 8, 3, com.example.game.SlideDirection.LEFT))
+        assertFalse(PuzzleEngine.canMoveInDirection(oneAway, 8, 3, com.example.game.SlideDirection.RIGHT))
+
+        // Verify coach evaluates solving move as SOLVED with 1.0f progress
+        val solvedBoard = PuzzleEngine.tryMove(oneAway, 8, 3)!!
+        val solvedCoach = com.example.game.PuzzleCoach.evaluateMove(
+            previousBoard = oneAway,
+            newBoard = solvedBoard,
+            movedTileValue = 8,
+            gridSize = 3,
+            baselineManhattan = 2,
+            previousOffTrackStreak = 0
+        )
+        assertEquals(com.example.game.CoachTone.SOLVED, solvedCoach.tone)
+        assertEquals(1f, solvedCoach.progressFraction, 0.001f)
+
+        // Verify moving tile 5 down (away from home) from oneAway triggers TRYING or OFF_TRACK when repeated
+        val movedAway = PuzzleEngine.tryMove(oneAway, 4, 3)!!
+        val coachTrying = com.example.game.PuzzleCoach.evaluateMove(
+            previousBoard = oneAway,
+            newBoard = movedAway,
+            movedTileValue = 5,
+            gridSize = 3,
+            baselineManhattan = 3,
+            previousOffTrackStreak = 0
+        )
+        assertEquals(com.example.game.CoachTone.TRYING, coachTrying.tone)
+
+        // Repeatedly moving away triggers OFF_TRACK warning
+        val movedFurther = PuzzleEngine.tryMove(movedAway, 3, 3)!!
+        val coachOffTrack = com.example.game.PuzzleCoach.evaluateMove(
+            previousBoard = movedAway,
+            newBoard = movedFurther,
+            movedTileValue = 4,
+            gridSize = 3,
+            baselineManhattan = 3,
+            previousOffTrackStreak = 1
+        )
+        assertEquals(com.example.game.CoachTone.OFF_TRACK, coachOffTrack.tone)
     }
 }

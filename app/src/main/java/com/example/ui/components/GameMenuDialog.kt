@@ -47,6 +47,7 @@ import androidx.compose.ui.window.DialogProperties
 @Composable
 fun GameMenuDialog(
     isOpen: Boolean,
+    onOpenGetHelped: () -> Unit,
     onOpenLevels: () -> Unit,
     onOpenInstructions: () -> Unit,
     onOpenLeaderboard: () -> Unit,
@@ -71,7 +72,7 @@ fun GameMenuDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Header
                 Row(
@@ -105,19 +106,26 @@ fun GameMenuDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Menu items
                 MenuItemRow(
-                    title = "Levels & Stages",
-                    subtitle = "Choose from 45 progressive puzzles",
+                    title = "Get Helped (Live Coach)",
+                    subtitle = "Direct step-by-step arrow guidance on board",
+                    icon = Icons.Default.HelpOutline,
+                    onClick = onOpenGetHelped
+                )
+
+                MenuItemRow(
+                    title = "105 Levels & Stages",
+                    subtitle = "3x3, 4x4, 5x5 & 6x6 — all unlocked free",
                     icon = Icons.Default.FormatListNumbered,
                     onClick = onOpenLevels
                 )
 
                 MenuItemRow(
                     title = "How to Play",
-                    subtitle = "Rules, sliding mechanics, and tactics",
+                    subtitle = "Rules, Level 1 & 2 tips, and swipe controls",
                     icon = Icons.Default.HelpOutline,
                     onClick = onOpenInstructions
                 )
@@ -130,8 +138,8 @@ fun GameMenuDialog(
                 )
 
                 MenuItemRow(
-                    title = "Sound & Audio Settings",
-                    subtitle = "Adjust volume with recommended setting",
+                    title = "Themes, Zen Mode & Audio",
+                    subtitle = "Board styles, volume bar, & haptics",
                     icon = Icons.Default.Settings,
                     onClick = onOpenSettings
                 )

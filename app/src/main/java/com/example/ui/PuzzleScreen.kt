@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.components.BotanicalFoliageSprig
+import com.example.ui.components.CoachHorizontalBar
 import com.example.ui.components.GameMenuDialog
+import com.example.ui.components.GetHelpedDialog
 import com.example.ui.components.HowToPlayDialog
 import com.example.ui.components.LeaderboardDialog
 import com.example.ui.components.LevelsSectionDialog
@@ -35,13 +37,14 @@ import com.example.ui.components.WoodPlankBackground
 import com.example.ui.components.WoodPuzzleBoard
 
 /**
- * Main Game Interface designed to match the user's reference image exactly:
+ * Main Game Interface designed to match the user's reference image:
  * - Natural vertical honey-wood plank background
  * - Arched sculpted wooden top header with undo button, moves counter, level ribbon, and parchment record
- * - Chunky rounded wooden puzzle board with carved numbers, crimson target digits, and brushed steel tile with screws
+ * - Live Horizontal Coach Bar at the top showing real-time solving progress + "Get Helped" action button
+ * - Chunky rounded wooden puzzle board with carved numbers, crimson target digits, brushed steel tile,
+ *   swipe/tap controls, working Peek overlay, and live Guided Direction arrows
  * - Four circular wooden bottom action buttons (💡 Hint, ↻ Reset, 🔍 Peek, ⏭ Next)
- * - Fixed, non-scrolling native mobile game viewport (no up/down scrolling)
- * - Levels and instructions separated cleanly into dedicated overlay sections
+ * - Fixed, non-scrolling native mobile game viewport
  */
 @Composable
 fun PuzzleScreen(
@@ -50,11 +53,16 @@ fun PuzzleScreen(
     val difficulty by viewModel.difficulty.collectAsStateWithLifecycle()
     val currentLevelNumber by viewModel.currentLevelNumber.collectAsStateWithLifecycle()
     val maxUnlockedLevel by viewModel.maxUnlockedLevel.collectAsStateWithLifecycle()
+    val levelStarsMap by viewModel.levelStarsMap.collectAsStateWithLifecycle()
+    val totalSolvedCount by viewModel.totalSolvedCount.collectAsStateWithLifecycle()
 
     val board by viewModel.board.collectAsStateWithLifecycle()
     val moves by viewModel.moves.collectAsStateWithLifecycle()
     val timeElapsedMillis by viewModel.timeElapsedMillis.collectAsStateWithLifecycle()
     val hintIndex by viewModel.hintIndex.collectAsStateWithLifecycle()
+    val isGuidedModeActive by viewModel.isGuidedModeActive.collectAsStateWithLifecycle()
+    val guidedHelpMove by viewModel.guidedHelpMove.collectAsStateWithLifecycle()
+    val coachState by viewModel.coachState.collectAsStateWithLifecycle()
     val isPeeking by viewModel.isPeeking.collectAsStateWithLifecycle()
     val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val bestRecord by viewModel.bestRecord.collectAsStateWithLifecycle()
@@ -62,6 +70,7 @@ fun PuzzleScreen(
     // Modals and dedicated sections
     val isLevelsSectionOpen by viewModel.isLevelsSectionOpen.collectAsStateWithLifecycle()
     val isInstructionsSectionOpen by viewModel.isInstructionsSectionOpen.collectAsStateWithLifecycle()
+    val isHelpDialogOpen by viewModel.isHelpDialogOpen.collectAsStateWithLifecycle()
     val isMenuOpen by viewModel.isMenuOpen.collectAsStateWithLifecycle()
     val isSettingsOpen by viewModel.isSettingsOpen.collectAsStateWithLifecycle()
     val isLeaderboardOpen by viewModel.isLeaderboardOpen.collectAsStateWithLifecycle()
@@ -73,6 +82,8 @@ fun PuzzleScreen(
     val soundVolumePercent by viewModel.volumePercent.collectAsStateWithLifecycle()
     val isVibrationOn by viewModel.isVibrationEnabled.collectAsStateWithLifecycle()
     val isAnimationsOn by viewModel.isAnimationsEnabled.collectAsStateWithLifecycle()
+    val isZenMode by viewModel.isZenMode.collectAsStateWithLifecycle()
+    val selectedTheme by viewModel.tileTheme.collectAsStateWithLifecycle()
 
     val isVictoryDialogOpen by viewModel.isVictoryDialogOpen.collectAsStateWithLifecycle()
     val victoryScore by viewModel.victoryScore.collectAsStateWithLifecycle()
@@ -102,12 +113,13 @@ fun PuzzleScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // 1. Top Arched Sculpted Wooden Bar (Undo, MOVES, LEVEL 1, Hourglass, Parchment, Menu)
+                    // 1. Top Arched Sculpted Wooden Bar (Undo, MOVES, LEVEL X, Hourglass, Parchment, Menu)
                     WoodHeaderWidget(
                         moves = moves,
                         levelNumber = currentLevelNumber,
                         timeElapsedMillis = timeElapsedMillis,
                         bestRecord = bestRecord,
+                        isZenMode = isZenMode,
                         onUndoClick = {
                             if (canUndo) viewModel.undoMove()
                         },
@@ -116,9 +128,20 @@ fun PuzzleScreen(
                         onMenuClick = { viewModel.openMenu() }
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    // 2. Live Horizontal Coach Line + "Get Helped" Action Button at Top of Game
+                    CoachHorizontalBar(
+                        coachState = coachState,
+                        isGuidedModeActive = isGuidedModeActive,
+                        guidedHelpMove = guidedHelpMove,
+                        onGetHelpedClick = { viewModel.openHelpCenter() },
+                        onAutoStepClick = { viewModel.executeGuidedAutoStep() },
+                        onStopGuideClick = { viewModel.stopGuidedDirection() },
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
 
-                    // 2. Center Wooden Board Frame with Chunky Wooden & Metal Tiles
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // 3. Center Wooden Board Frame with Chunky Wooden & Metal Tiles + Swipe & Guided Arrows
                     Box(
                         modifier = Modifier
                             .weight(1f, fill = false)
@@ -130,13 +153,16 @@ fun PuzzleScreen(
                             gridSize = difficulty.gridSize,
                             hintIndex = hintIndex,
                             isPeeking = isPeeking,
+                            tileTheme = selectedTheme,
+                            guidedHelpMove = guidedHelpMove,
+                            isGuidedModeActive = isGuidedModeActive,
                             onTileClick = { index -> viewModel.onTileClick(index) }
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                    // 3. Bottom 4 Circular Wooden Buttons with Decorative Foliage
+                    // 4. Bottom 4 Circular Wooden Buttons with Decorative Foliage
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.BottomStart
@@ -160,12 +186,25 @@ fun PuzzleScreen(
 
                 // --- DEDICATED OVERLAY SECTIONS ---
 
-                // Levels & Stages Section Modal
+                // Live Coach "Get Helped" Modal
+                GetHelpedDialog(
+                    isOpen = isHelpDialogOpen,
+                    coachState = coachState,
+                    guidedHelpMove = guidedHelpMove,
+                    onDirectMeOnBoard = { viewModel.startGuidedDirection() },
+                    onAutoMoveOneStep = { viewModel.executeGuidedAutoStep() },
+                    onOpenFullGuide = { viewModel.openInstructionsSection() },
+                    onDismiss = { viewModel.closeHelpCenter() }
+                )
+
+                // Levels & Stages Section Modal (All 105 levels unlocked for free play)
                 LevelsSectionDialog(
                     isOpen = isLevelsSectionOpen,
                     currentDifficulty = difficulty,
                     currentLevelNumber = currentLevelNumber,
                     maxUnlockedLevel = maxUnlockedLevel,
+                    levelStarsMap = levelStarsMap,
+                    totalSolvedCount = totalSolvedCount,
                     onSelectDifficulty = { diff -> viewModel.selectDifficulty(diff) },
                     onSelectLevel = { lvl -> viewModel.selectLevel(lvl) },
                     onDismiss = { viewModel.closeLevelsSection() }
@@ -181,6 +220,7 @@ fun PuzzleScreen(
                 // Top Options Menu Modal
                 GameMenuDialog(
                     isOpen = isMenuOpen,
+                    onOpenGetHelped = { viewModel.openHelpCenter() },
                     onOpenLevels = { viewModel.openLevelsSection() },
                     onOpenInstructions = { viewModel.openInstructionsSection() },
                     onOpenLeaderboard = { viewModel.openLeaderboard(difficulty) },
@@ -192,17 +232,21 @@ fun PuzzleScreen(
                     onDismiss = { viewModel.closeMenu() }
                 )
 
-                // Settings Sidebar (with Horizontal Line Volume Control & Recommended 80% Notch)
+                // Settings Sidebar (Audio, Volume Bar, Themes, Zen Mode & Free Edition info)
                 SettingsSidebar(
                     isOpen = isSettingsOpen,
                     isSoundOn = isSoundOn,
                     volumePercent = soundVolumePercent,
                     isVibrationOn = isVibrationOn,
                     isAnimationsOn = isAnimationsOn,
+                    isZenMode = isZenMode,
+                    selectedTheme = selectedTheme,
                     onToggleSound = { viewModel.toggleSound() },
                     onVolumeChanged = { vol -> viewModel.setSoundVolume(vol) },
                     onToggleVibration = { viewModel.toggleHaptics() },
                     onToggleAnimations = { viewModel.setAnimationsEnabled(!isAnimationsOn) },
+                    onToggleZenMode = { enabled -> viewModel.setZenMode(enabled) },
+                    onSelectTheme = { theme -> viewModel.setTileTheme(theme) },
                     onOpenHowToPlay = {
                         viewModel.closeSettings()
                         viewModel.openInstructionsSection()

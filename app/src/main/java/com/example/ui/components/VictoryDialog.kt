@@ -6,10 +6,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.Difficulty
+import com.example.data.model.LevelCatalog
 import com.example.ui.theme.GoldTrophy
 import com.example.ui.theme.NeonAmber
 import com.example.ui.theme.NeonCyan
@@ -90,13 +93,18 @@ fun VictoryDialog(
     val tenths = (timeElapsedMillis % 1000) / 100
     val formattedTime = String.format("%02d:%02d.%d", minutes, seconds, tenths)
 
+    val totalLevelsForDifficulty = LevelCatalog.getLevelsForDifficulty(difficulty).size
+
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(dismissOnClickOutside = false)
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
+                .fillMaxWidth(0.92f)
                 .clip(RoundedCornerShape(28.dp))
                 .border(2.dp, GoldTrophy.copy(alpha = 0.5f), RoundedCornerShape(28.dp)),
             color = SurfaceDark
@@ -104,7 +112,7 @@ fun VictoryDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -286,21 +294,23 @@ fun VictoryDialog(
                     }
                 }
 
-                // Action Buttons
+                // Action Buttons (Ranks, Replay, Next Level)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     FilledTonalButton(
                         onClick = onViewLeaderboard,
                         shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = SurfaceCardElevated,
                             contentColor = TextPrimary
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .heightIn(min = 48.dp)
                             .testTag("victory_view_leaderboard")
                     ) {
                         Icon(
@@ -309,19 +319,26 @@ fun VictoryDialog(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Ranks", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Ranks",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
 
                     FilledTonalButton(
                         onClick = onPlayAgain,
                         shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = SurfaceCardElevated,
                             contentColor = TextSecondary
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp)
+                            .heightIn(min = 48.dp)
                             .testTag("victory_play_again")
                     ) {
                         Icon(
@@ -332,25 +349,30 @@ fun VictoryDialog(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Replay",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
 
                     Button(
                         onClick = onNextLevel,
                         shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = NeonEmerald),
                         modifier = Modifier
-                            .weight(1.3f)
-                            .height(48.dp)
+                            .weight(1.35f)
+                            .heightIn(min = 48.dp)
                             .testTag("victory_next_level")
                     ) {
                         Text(
-                            text = if (currentLevelNumber < 10) "Next Level" else "Complete!",
+                            text = if (currentLevelNumber < totalLevelsForDifficulty) "Next Level" else "Complete!",
                             color = Color.Black,
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }

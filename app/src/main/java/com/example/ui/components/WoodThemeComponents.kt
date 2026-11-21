@@ -28,9 +28,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.Lightbulb
@@ -42,7 +46,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,14 +66,21 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.LeaderboardEntity
+import com.example.data.model.TileTheme
+import com.example.game.GuidedHelpMove
+import com.example.game.PuzzleEngine
+import com.example.game.SlideDirection
+import kotlin.math.abs
 
 // Authentic Wood and Organic Color Palette matching user's reference image
 val WoodPlankLight = Color(0xFFE5943B)
@@ -210,6 +224,7 @@ fun WoodHeaderWidget(
     onLevelClick: () -> Unit,
     onRecordClick: () -> Unit,
     onMenuClick: () -> Unit,
+    isZenMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val totalSeconds = timeElapsedMillis / 1000
@@ -475,8 +490,8 @@ fun WoodHeaderWidget(
                         modifier = Modifier.size(11.dp)
                     )
                     Text(
-                        text = formattedTime,
-                        color = Color(0xFFFFF6EA),
+                        text = if (isZenMode) "ZEN ∞" else formattedTime,
+                        color = if (isZenMode) Color(0xFF4ADE80) else Color(0xFFFFF6EA),
                         fontWeight = FontWeight.Bold,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace
@@ -503,20 +518,53 @@ fun WoodPuzzleBoard(
     hintIndex: Int?,
     isPeeking: Boolean,
     onTileClick: (Int) -> Unit,
+    tileTheme: TileTheme = TileTheme.CLASSIC_WOOD,
+    guidedHelpMove: GuidedHelpMove? = null,
+    isGuidedModeActive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val frameGradient = when (tileTheme) {
+        TileTheme.CLASSIC_WOOD -> listOf(WoodBorderLight, WoodBorderMid, WoodBorderDark)
+        TileTheme.DARK_WALNUT -> listOf(Color(0xFF5D341E), Color(0xFF3E1F10), Color(0xFF261108))
+        TileTheme.MINIMALIST_NEON -> listOf(Color(0xFF334155), Color(0xFF1E293B), Color(0xFF0F172A))
+        TileTheme.NATURE -> listOf(Color(0xFF3D7A52), Color(0xFF275436), Color(0xFF173622))
+        TileTheme.STEEL_INDUSTRIAL -> listOf(Color(0xFF94A3B8), Color(0xFF64748B), Color(0xFF334155))
+    }
+
+    val frameBorderColor = when (tileTheme) {
+        TileTheme.CLASSIC_WOOD -> Color(0xFF8F4111)
+        TileTheme.DARK_WALNUT -> Color(0xFF704126)
+        TileTheme.MINIMALIST_NEON -> Color(0xFF38BDF8)
+        TileTheme.NATURE -> Color(0xFF4E9861)
+        TileTheme.STEEL_INDUSTRIAL -> Color(0xFFCBD5E1)
+    }
+
+    val digitSize: TextUnit = when {
+        gridSize <= 3 -> 38.sp
+        gridSize == 4 -> 30.sp
+        gridSize == 5 -> 22.sp
+        else -> 17.sp
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "guide_pulse")
+    val guidePulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.45f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(650, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "guide_alpha"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .shadow(elevation = 12.dp, shape = RoundedCornerShape(32.dp))
             .clip(RoundedCornerShape(32.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(WoodBorderLight, WoodBorderMid, WoodBorderDark)
-                )
-            )
-            .border(5.dp, Color(0xFF8F4111), RoundedCornerShape(32.dp))
+            .background(Brush.verticalGradient(frameGradient))
+            .border(5.dp, frameBorderColor, RoundedCornerShape(32.dp))
             .padding(12.dp)
             .testTag("wooden_puzzle_board")
     ) {
@@ -550,15 +598,59 @@ fun WoodPuzzleBoard(
                             val targetValue = index + 1
                             val isCorrectSpot = tileValue == targetValue && tileValue != 0
                             val isHint = hintIndex == index
+                            val activeGuideDir = if ((isGuidedModeActive || isHint) && guidedHelpMove?.tileIndex == index) {
+                                guidedHelpMove.direction
+                            } else {
+                                null
+                            }
 
                             // Tile 3 in the user's picture is the special brushed steel metal plate
-                            val isSpecialMetalTile = (tileValue == 3) || isHint
+                            val isSpecialMetalTile = when (tileTheme) {
+                                TileTheme.STEEL_INDUSTRIAL -> true
+                                else -> (tileValue == 3) || (isHint && !isGuidedModeActive)
+                            }
+
+                            // Swipe-to-slide gesture modifier
+                            var dragDeltaX by remember(index, board) { mutableFloatStateOf(0f) }
+                            var dragDeltaY by remember(index, board) { mutableFloatStateOf(0f) }
+                            var hasSwiped by remember(index, board) { mutableStateOf(false) }
+
+                            val swipeModifier = Modifier.pointerInput(index, board, gridSize) {
+                                detectDragGestures(
+                                    onDragStart = {
+                                        dragDeltaX = 0f
+                                        dragDeltaY = 0f
+                                        hasSwiped = false
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        if (hasSwiped) return@detectDragGestures
+                                        dragDeltaX += dragAmount.x
+                                        dragDeltaY += dragAmount.y
+                                        val threshold = 24f
+                                        val swipeDir = when {
+                                            abs(dragDeltaX) > abs(dragDeltaY) && abs(dragDeltaX) > threshold -> {
+                                                if (dragDeltaX > 0) SlideDirection.RIGHT else SlideDirection.LEFT
+                                            }
+                                            abs(dragDeltaY) > abs(dragDeltaX) && abs(dragDeltaY) > threshold -> {
+                                                if (dragDeltaY > 0) SlideDirection.DOWN else SlideDirection.UP
+                                            }
+                                            else -> null
+                                        }
+                                        if (swipeDir != null && PuzzleEngine.canMoveInDirection(board, index, gridSize, swipeDir)) {
+                                            hasSwiped = true
+                                            onTileClick(index)
+                                        }
+                                    }
+                                )
+                            }
 
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
-                                    .padding(4.dp),
+                                    .padding(if (gridSize >= 6) 2.dp else 4.dp)
+                                    .then(if (tileValue != 0) swipeModifier else Modifier),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (tileValue == 0) {
@@ -569,15 +661,52 @@ fun WoodPuzzleBoard(
                                         // Brushed Steel Metal Plate with 4 screws (like tile '3' in screenshot)
                                         BrushedMetalTile(
                                             number = tileValue,
+                                            fontSize = digitSize,
+                                            isGuidedHighlight = isHint || activeGuideDir != null,
+                                            guidePulseAlpha = guidePulseAlpha,
+                                            guideDirection = activeGuideDir,
                                             onClick = { onTileClick(index) }
                                         )
                                     } else {
-                                        // Rich Warm Wooden Tile
+                                        // Rich Warm Wooden Tile (or active theme tint)
                                         ChunkyWoodTile(
                                             number = tileValue,
                                             isCorrectSpot = isCorrectSpot,
+                                            fontSize = digitSize,
+                                            tileTheme = tileTheme,
+                                            isGuidedHighlight = isHint || activeGuideDir != null,
+                                            guidePulseAlpha = guidePulseAlpha,
+                                            guideDirection = activeGuideDir,
                                             onClick = { onTileClick(index) }
                                         )
+                                    }
+                                }
+
+                                // Working Peek Solved Board Overlay
+                                if (isPeeking) {
+                                    val expectedText = if (index == board.size - 1) "EMPTY" else "${index + 1}"
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(Color(0xCC240D02))
+                                            .border(1.5.dp, Color(0xFFFFD464), RoundedCornerShape(14.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "GOAL",
+                                                color = Color(0xFFFFD464),
+                                                fontSize = if (gridSize >= 5) 7.sp else 9.sp,
+                                                fontWeight = FontWeight.ExtraBold
+                                            )
+                                            Text(
+                                                text = expectedText,
+                                                color = Color(0xFFFFF6EA),
+                                                fontSize = if (index == board.size - 1) 10.sp else (digitSize.value * 0.72f).sp,
+                                                fontWeight = FontWeight.Black
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -599,26 +728,68 @@ fun ChunkyWoodTile(
     number: Int,
     isCorrectSpot: Boolean,
     onClick: () -> Unit,
+    fontSize: TextUnit = 38.sp,
+    tileTheme: TileTheme = TileTheme.CLASSIC_WOOD,
+    isGuidedHighlight: Boolean = false,
+    guidePulseAlpha: Float = 1f,
+    guideDirection: SlideDirection? = null,
     modifier: Modifier = Modifier
 ) {
-    val numberColor = if (isCorrectSpot) TileNumberRed else TileNumberBrown
+    val tileColors = when (tileTheme) {
+        TileTheme.CLASSIC_WOOD -> listOf(
+            TileWoodLightEdge,
+            TileWoodFace,
+            Color(0xFFC97626),
+            TileWoodDarkEdge
+        )
+        TileTheme.DARK_WALNUT -> listOf(
+            Color(0xFF9C6644),
+            Color(0xFF7F4F24),
+            Color(0xFF582F0E),
+            Color(0xFF3C1E08)
+        )
+        TileTheme.MINIMALIST_NEON -> listOf(
+            Color(0xFF1E293B),
+            Color(0xFF0F172A),
+            Color(0xFF0B1120),
+            Color(0xFF020617)
+        )
+        TileTheme.NATURE -> listOf(
+            Color(0xFF74C69D),
+            Color(0xFF52B788),
+            Color(0xFF40916C),
+            Color(0xFF2D6A4F)
+        )
+        TileTheme.STEEL_INDUSTRIAL -> listOf(MetalPlateTop, MetalPlateBase, MetalPlateBottom)
+    }
+
+    val tileBorderColor = when {
+        isGuidedHighlight -> Color(0xFF4ADE80).copy(alpha = guidePulseAlpha)
+        tileTheme == TileTheme.MINIMALIST_NEON -> if (isCorrectSpot) Color(0xFF22D3EE) else Color(0xFF38BDF8).copy(alpha = 0.55f)
+        tileTheme == TileTheme.NATURE -> Color(0xFF1B4332)
+        tileTheme == TileTheme.DARK_WALNUT -> Color(0xFFD4A373).copy(alpha = 0.65f)
+        else -> Color(0xFF7A370A)
+    }
+
+    val numberColor = when (tileTheme) {
+        TileTheme.CLASSIC_WOOD -> if (isCorrectSpot) TileNumberRed else TileNumberBrown
+        TileTheme.DARK_WALNUT -> if (isCorrectSpot) Color(0xFFFFD166) else Color(0xFFFFF3E0)
+        TileTheme.MINIMALIST_NEON -> if (isCorrectSpot) Color(0xFF34D399) else Color(0xFF38BDF8)
+        TileTheme.NATURE -> if (isCorrectSpot) Color(0xFFFEF08A) else Color(0xFF081C15)
+        TileTheme.STEEL_INDUSTRIAL -> MetalNumberSlate
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        TileWoodLightEdge,
-                        TileWoodFace,
-                        Color(0xFFC97626),
-                        TileWoodDarkEdge
-                    )
-                )
+            .background(Brush.verticalGradient(tileColors))
+            .border(
+                width = if (isGuidedHighlight) 3.dp else 2.5.dp,
+                color = tileBorderColor,
+                shape = RoundedCornerShape(16.dp)
             )
-            .border(2.5.dp, Color(0xFF7A370A), RoundedCornerShape(16.dp))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -644,15 +815,25 @@ fun ChunkyWoodTile(
             )
         }
 
-        // Engraved 3D Number with bottom highlight and inner shadow
+        // Engraved 3D Number
         Text(
             text = "$number",
             color = numberColor,
-            fontSize = 38.sp,
+            fontSize = fontSize,
             fontWeight = FontWeight.ExtraBold,
             fontFamily = FontFamily.SansSerif,
             textAlign = TextAlign.Center
         )
+
+        // Directional Arrow Badge when Guided Coach directs this tile
+        if (guideDirection != null) {
+            GuidedDirectionBadge(
+                direction = guideDirection,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+            )
+        }
     }
 }
 
@@ -666,6 +847,10 @@ fun ChunkyWoodTile(
 fun BrushedMetalTile(
     number: Int,
     onClick: () -> Unit,
+    fontSize: TextUnit = 38.sp,
+    isGuidedHighlight: Boolean = false,
+    guidePulseAlpha: Float = 1f,
+    guideDirection: SlideDirection? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -682,7 +867,11 @@ fun BrushedMetalTile(
                     )
                 )
             )
-            .border(2.dp, Color(0xFF86929B), RoundedCornerShape(16.dp))
+            .border(
+                width = if (isGuidedHighlight) 3.dp else 2.dp,
+                color = if (isGuidedHighlight) Color(0xFF4ADE80).copy(alpha = guidePulseAlpha) else Color(0xFF86929B),
+                shape = RoundedCornerShape(16.dp)
+            )
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -743,10 +932,47 @@ fun BrushedMetalTile(
         Text(
             text = "$number",
             color = MetalNumberSlate,
-            fontSize = 38.sp,
+            fontSize = fontSize,
             fontWeight = FontWeight.Black,
             fontFamily = FontFamily.SansSerif,
             textAlign = TextAlign.Center
+        )
+
+        if (guideDirection != null) {
+            GuidedDirectionBadge(
+                direction = guideDirection,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun GuidedDirectionBadge(
+    direction: SlideDirection,
+    modifier: Modifier = Modifier
+) {
+    val icon = when (direction) {
+        SlideDirection.UP -> Icons.Default.ArrowUpward
+        SlideDirection.DOWN -> Icons.Default.ArrowDownward
+        SlideDirection.LEFT -> Icons.AutoMirrored.Filled.ArrowBack
+        SlideDirection.RIGHT -> Icons.AutoMirrored.Filled.ArrowForward
+    }
+    Box(
+        modifier = modifier
+            .size(22.dp)
+            .clip(CircleShape)
+            .background(Color(0xFF16A34A))
+            .border(1.5.dp, Color.White, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = "Move ${direction.label}",
+            tint = Color.White,
+            modifier = Modifier.size(14.dp)
         )
     }
 }

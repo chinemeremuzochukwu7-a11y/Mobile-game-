@@ -44,6 +44,7 @@ object PuzzleEngine {
             Difficulty.EASY -> 60
             Difficulty.MEDIUM -> 140
             Difficulty.HARD -> 260
+            Difficulty.EXPERT -> 380
         }
         return generateBoardWithSteps(difficulty, steps)
     }
@@ -149,22 +150,34 @@ object PuzzleEngine {
     }
 
     /**
-     * Suggests a helpful tile index to move next.
+     * Checks if a tile at [tileIndex] can slide in the given swipe [direction] toward the empty slot.
      */
-    fun findHintMove(board: List<Int>, gridSize: Int): Int? {
+    fun canMoveInDirection(
+        board: List<Int>,
+        tileIndex: Int,
+        gridSize: Int,
+        direction: SlideDirection
+    ): Boolean {
         val emptyIndex = board.indexOf(0)
-        if (emptyIndex == -1) return null
+        if (emptyIndex == -1 || tileIndex == emptyIndex) return false
 
+        val tileRow = tileIndex / gridSize
+        val tileCol = tileIndex % gridSize
         val emptyRow = emptyIndex / gridSize
         val emptyCol = emptyIndex % gridSize
 
-        val adjacent = mutableListOf<Int>()
-        if (emptyRow > 0) adjacent.add((emptyRow - 1) * gridSize + emptyCol)
-        if (emptyRow < gridSize - 1) adjacent.add((emptyRow + 1) * gridSize + emptyCol)
-        if (emptyCol > 0) adjacent.add(emptyRow * gridSize + (emptyCol - 1))
-        if (emptyCol < gridSize - 1) adjacent.add(emptyRow * gridSize + (emptyCol + 1))
+        return when (direction) {
+            SlideDirection.UP -> tileCol == emptyCol && tileRow > emptyRow
+            SlideDirection.DOWN -> tileCol == emptyCol && tileRow < emptyRow
+            SlideDirection.LEFT -> tileRow == emptyRow && tileCol > emptyCol
+            SlideDirection.RIGHT -> tileRow == emptyRow && tileCol < emptyCol
+        }
+    }
 
-        // Prefer adjacent tile that is NOT yet in correct position or that moves towards target
-        return adjacent.firstOrNull { !isTileInCorrectPosition(board, it) } ?: adjacent.firstOrNull()
+    /**
+     * Suggests a helpful tile index to move next using the smart PuzzleCoach solver.
+     */
+    fun findHintMove(board: List<Int>, gridSize: Int): Int? {
+        return PuzzleCoach.findGuidedHelp(board, gridSize)?.tileIndex
     }
 }

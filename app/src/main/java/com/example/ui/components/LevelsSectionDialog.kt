@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -21,14 +20,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
@@ -40,7 +38,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -50,7 +47,8 @@ import com.example.data.model.LevelCatalog
 
 /**
  * Dedicated Levels & Stages Section Dialog.
- * Keeps the main game interface clean and unfettered while giving players access to all 45 stages!
+ * Provides free access to all 105 levels across Easy (3x3), Medium (4x4), Hard (5x5), and Expert (6x6),
+ * displaying earned 1-3 star ratings on completed levels.
  */
 @Composable
 fun LevelsSectionDialog(
@@ -58,6 +56,8 @@ fun LevelsSectionDialog(
     currentDifficulty: Difficulty,
     currentLevelNumber: Int,
     maxUnlockedLevel: Int,
+    levelStarsMap: Map<Int, Int> = emptyMap(),
+    totalSolvedCount: Int = 0,
     onSelectDifficulty: (Difficulty) -> Unit,
     onSelectLevel: (Int) -> Unit,
     onDismiss: () -> Unit
@@ -72,7 +72,7 @@ fun LevelsSectionDialog(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
+                .fillMaxWidth(0.94f)
                 .clip(RoundedCornerShape(26.dp))
                 .border(2.5.dp, Color(0xFF8F4111), RoundedCornerShape(26.dp)),
             color = Color(0xFF381604)
@@ -82,7 +82,7 @@ fun LevelsSectionDialog(
                     .fillMaxWidth()
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Header with title and close
                 Row(
@@ -90,18 +90,19 @@ fun LevelsSectionDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "LEVELS & STAGES",
+                            text = "105 LEVELS & STAGES",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
                             color = Color(0xFFFBE5C5),
-                            letterSpacing = 1.sp
+                            letterSpacing = 0.8.sp
                         )
                         Text(
-                            text = "Select any unlocked level to play",
+                            text = "All stages open • $totalSolvedCount puzzles solved",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFD6A068)
+                            color = Color(0xFF4ADE80),
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
@@ -123,11 +124,12 @@ fun LevelsSectionDialog(
                     }
                 }
 
-                // Difficulty Tab Row
-                TabRow(
+                // Difficulty Tab Row (Easy 3x3, Medium 4x4, Hard 5x5, Expert 6x6)
+                ScrollableTabRow(
                     selectedTabIndex = currentDifficulty.ordinal,
                     containerColor = Color(0xFF260D02),
                     contentColor = Color(0xFFFBE5C5),
+                    edgePadding = 4.dp,
                     indicator = { tabPositions ->
                         TabRowDefaults.SecondaryIndicator(
                             Modifier.tabIndicatorOffset(tabPositions[currentDifficulty.ordinal]),
@@ -156,69 +158,78 @@ fun LevelsSectionDialog(
                     }
                 }
 
-                // Grid of 15 Levels
+                // Grid of Levels (All Unlocked for Free Play!)
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(5),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(280.dp),
+                        .height(290.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     items(levels, key = { it.levelNumber }) { level ->
                         val isSelected = level.levelNumber == currentLevelNumber
-                        val isUnlocked = level.levelNumber <= maxUnlockedLevel
+                        val earnedStars = levelStarsMap[level.levelNumber] ?: 0
+                        val isCleared = earnedStars > 0 || level.levelNumber < maxUnlockedLevel
 
                         val bg = when {
                             isSelected -> Brush.verticalGradient(listOf(Color(0xFFE5943B), Color(0xFFBF6F20)))
-                            isUnlocked -> Brush.verticalGradient(listOf(Color(0xFF8F4111), Color(0xFF5A250B)))
-                            else -> Brush.verticalGradient(listOf(Color(0xFF2E1204), Color(0xFF1E0A02)))
+                            isCleared -> Brush.verticalGradient(listOf(Color(0xFF7D3B10), Color(0xFF522209)))
+                            else -> Brush.verticalGradient(listOf(Color(0xFF5E290D), Color(0xFF431A06)))
                         }
 
-                        val textColor = when {
-                            isSelected -> Color(0xFF381604)
-                            isUnlocked -> Color(0xFFFBE5C5)
-                            else -> Color(0xFF6E4324)
-                        }
+                        val textColor = if (isSelected) Color(0xFF381604) else Color(0xFFFBE5C5)
 
                         Box(
                             modifier = Modifier
-                                .size(50.dp)
+                                .height(56.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(bg)
                                 .border(
                                     if (isSelected) 2.dp else 1.dp,
-                                    if (isSelected) Color(0xFFFFF0D2) else Color(0xFF70320B),
+                                    when {
+                                        isSelected -> Color(0xFFFFF0D2)
+                                        earnedStars > 0 -> Color(0xFFFFD464).copy(alpha = 0.7f)
+                                        else -> Color(0xFF8F4111)
+                                    },
                                     RoundedCornerShape(12.dp)
                                 )
-                                .clickable(enabled = isUnlocked) {
+                                .clickable {
                                     onSelectLevel(level.levelNumber)
                                     onDismiss()
                                 }
                                 .testTag("level_section_chip_${level.levelNumber}"),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (!isUnlocked) {
-                                Icon(
-                                    imageVector = Icons.Default.Lock,
-                                    contentDescription = "Locked",
-                                    tint = Color(0xFF6E4324),
-                                    modifier = Modifier.size(16.dp)
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "${level.levelNumber}",
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 15.sp,
+                                    color = textColor
                                 )
-                            } else {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "${level.levelNumber}",
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 16.sp,
-                                        color = textColor
-                                    )
+
+                                if (earnedStars > 0) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                                        repeat(earnedStars) {
+                                            Icon(
+                                                imageVector = Icons.Default.Star,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color(0xFF381604) else Color(0xFFFFD464),
+                                                modifier = Modifier.size(9.dp)
+                                            )
+                                        }
+                                    }
+                                } else {
                                     Text(
                                         text = "${level.parMoves}m",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 8.sp,
-                                        color = textColor.copy(alpha = 0.8f)
+                                        color = textColor.copy(alpha = 0.75f)
                                     )
                                 }
                             }
